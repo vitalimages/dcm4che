@@ -301,6 +301,8 @@ public class SpecificCharacterSet {
 
         @Override
         public byte[] encode(String val, String delimiters) {
+
+            final String PN_DELIMS = "^=\\";
             int strlen = val.length();
             CharBuffer cb = CharBuffer.wrap(val.toCharArray());
             Encoder enc1 = encoder(cachedEncoder1, codecs[0]);
@@ -325,7 +327,7 @@ public class SpecificCharacterSet {
                             && delimiters.indexOf(comp.charAt(0)) >= 0) {
                         // switch to initial character set, if current active
                         // character set does not contain ASCII
-                        if (!codecs[cur].containsASCII())
+                        if (!codecs[cur].equals(Codec.ISO_646) && (PN_DELIMS.equals(delimiters) && PN_DELIMS.contains(comp)))
                             Encoder.escSeq(bb, codecs[0].getEscSeq0());
                         bb.put((byte) comp.charAt(0));
                         cur = 0;
@@ -360,7 +362,7 @@ public class SpecificCharacterSet {
                             CodingErrorAction.REPORT));
                     cur = next;
                 }
-                if (!codecs[cur].containsASCII())
+                if (!codecs[cur].equals(Codec.ISO_646))
                     Encoder.escSeq(bb, codecs[0].getEscSeq0());
             }
             return Arrays.copyOf(buf, bb.position());

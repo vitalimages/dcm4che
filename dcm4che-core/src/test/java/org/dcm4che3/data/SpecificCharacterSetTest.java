@@ -60,7 +60,7 @@ public class SpecificCharacterSetTest {
     private static final String JAPANESE_PERSON_NAME_ASCII =
             "Yamada^Tarou=山田^太郎=やまだ^たろう";
     private static final String JAPANESE_PERSON_NAME_JISX0201 =
-            "ﾔﾏﾀﾞ^ﾀﾛｳ=山田^太郎=やまだ^たろう";
+            "Yamada^Tarou=ﾔﾏﾀﾞ^ﾀﾛｳ=山田^太郎";
     private static final String KOREAN_PERSON_NAME =
             "Hong^Gildong=洪^吉洞=홍^길동";
     private static final String KOREAN_LONG_TEXT = 
@@ -113,29 +113,31 @@ public class SpecificCharacterSetTest {
             (byte) 0x24, (byte) 0x26, (byte) 0x1b, (byte) 0x28, (byte) 0x42 };
 
     private static final byte[] JAPANESE_PERSON_NAME_JISX0201_BYTES = {
-            (byte) 0xd4, (byte) 0xcf, (byte) 0xc0, (byte) 0xde, (byte) 0x5e,
-            (byte) 0xc0, (byte) 0xdb, (byte) 0xb3, (byte) 0x3d, (byte) 0x1b,
+            (byte) 0x59, (byte) 0x61, (byte) 0x6d, (byte) 0x61, (byte) 0x64,
+            (byte) 0x61, (byte) 0x5e, (byte) 0x54, (byte) 0x61, (byte) 0x72,
+            (byte) 0x6f, (byte) 0x75, (byte) 0x3d, (byte) 0x1b, (byte) 0x29,
+            (byte) 0x49, (byte) 0xd4, (byte) 0xcf, (byte) 0xc0, (byte) 0xde,
+            (byte) 0x1b, (byte) 0x28, (byte) 0x42, (byte) 0x5e, (byte) 0x1b,
+            (byte) 0x29, (byte) 0x49, (byte) 0xc0, (byte) 0xdb, (byte) 0xb3,
+            (byte) 0x1b, (byte) 0x28, (byte) 0x42, (byte) 0x3d, (byte) 0x1b,
             (byte) 0x24, (byte) 0x42, (byte) 0x3b, (byte) 0x33, (byte) 0x45,
-            (byte) 0x44, (byte) 0x1b, (byte) 0x28, (byte) 0x4a, (byte) 0x5e,
+            (byte) 0x44, (byte) 0x1b, (byte) 0x28, (byte) 0x42, (byte) 0x5e,
             (byte) 0x1b, (byte) 0x24, (byte) 0x42, (byte) 0x42, (byte) 0x40,
-            (byte) 0x4f, (byte) 0x3a, (byte) 0x1b, (byte) 0x28, (byte) 0x4a,
-            (byte) 0x3d, (byte) 0x1b, (byte) 0x24, (byte) 0x42, (byte) 0x24,
-            (byte) 0x64, (byte) 0x24, (byte) 0x5e, (byte) 0x24, (byte) 0x40,
-            (byte) 0x1b, (byte) 0x28, (byte) 0x4a, (byte) 0x5e, (byte) 0x1b,
-            (byte) 0x24, (byte) 0x42, (byte) 0x24, (byte) 0x3f, (byte) 0x24,
-            (byte) 0x6d, (byte) 0x24, (byte) 0x26, (byte) 0x1b, (byte) 0x28,
-            (byte) 0x4a };
+            (byte) 0x4f, (byte) 0x3a, (byte) 0x1b, (byte) 0x28, (byte) 0x42 };
 
     private static final byte[] KOREAN_PERSON_NAME_BYTES = {
             (byte) 0x48, (byte) 0x6f, (byte) 0x6e, (byte) 0x67, (byte) 0x5e,
             (byte) 0x47, (byte) 0x69, (byte) 0x6c, (byte) 0x64, (byte) 0x6f,
             (byte) 0x6e, (byte) 0x67, (byte) 0x3d, (byte) 0x1b, (byte) 0x24,
-            (byte) 0x29, (byte) 0x43, (byte) 0xfb, (byte) 0xf3, (byte) 0x5e,
-            (byte) 0x1b, (byte) 0x24, (byte) 0x29, (byte) 0x43, (byte) 0xd1,
-            (byte) 0xce, (byte) 0xd4, (byte) 0xd7, (byte) 0x3d, (byte) 0x1b,
-            (byte) 0x24, (byte) 0x29, (byte) 0x43, (byte) 0xc8, (byte) 0xab,
-            (byte) 0x5e, (byte) 0x1b, (byte) 0x24, (byte) 0x29, (byte) 0x43,
-            (byte) 0xb1, (byte) 0xe6, (byte) 0xb5, (byte) 0xbf };
+            (byte) 0x29, (byte) 0x43, (byte) 0xfb, (byte) 0xf3, (byte) 0x1b,
+            (byte) 0x28, (byte) 0x42, (byte) 0x5e, (byte) 0x1b, (byte) 0x24,
+            (byte) 0x29, (byte) 0x43, (byte) 0xd1, (byte) 0xce, (byte) 0xd4,
+            (byte) 0xd7, (byte) 0x1b, (byte) 0x28, (byte) 0x42, (byte) 0x3d,
+            (byte) 0x1b, (byte) 0x24, (byte) 0x29, (byte) 0x43, (byte) 0xc8,
+            (byte) 0xab, (byte) 0x1b, (byte) 0x28, (byte) 0x42, (byte) 0x5e,
+            (byte) 0x1b, (byte) 0x24, (byte) 0x29, (byte) 0x43, (byte) 0xb1,
+            (byte) 0xe6, (byte) 0xb5, (byte) 0xbf, (byte) 0x1b, (byte) 0x28,
+            (byte) 0x42 };
 
     private static final byte[] KOREAN_LONG_TEXT_BYTES = {
             (byte) 0x1b, (byte) 0x24, (byte) 0x29, (byte) 0x43, (byte) 0x54,
@@ -197,7 +199,7 @@ public class SpecificCharacterSetTest {
 
     private SpecificCharacterSet jisX0201() {
         return SpecificCharacterSet.valueOf(
-                new String[] { "ISO 2022 IR 13", "ISO 2022 IR 87" });
+                new String[] { null, "ISO 2022 IR 13", "ISO 2022 IR 87" });
     }
 
     private SpecificCharacterSet ksx1001() {
