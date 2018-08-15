@@ -63,35 +63,35 @@ import org.slf4j.LoggerFactory;
  */
 public class DicomDirWriter extends DicomDirReader {
 
-    private final static Logger LOG = 
+    protected final static Logger LOG = 
             LoggerFactory.getLogger(DicomDirWriter.class);
 
-    private final static int KNOWN_INCONSISTENCIES = 0xFFFF;
-    private final static int NO_KNOWN_INCONSISTENCIES = 0;
-    private final static int IN_USE = 0xFFFF;
-    private final static int INACTIVE = 0;
+    protected final static int KNOWN_INCONSISTENCIES = 0xFFFF;
+    protected final static int NO_KNOWN_INCONSISTENCIES = 0;
+    protected final static int IN_USE = 0xFFFF;
+    protected final static int INACTIVE = 0;
 
-    private final byte[] dirInfoHeader = { 
+    protected final byte[] dirInfoHeader = { 
             0x04, 0x00, 0x00, 0x12, 'U', 'L', 4, 0, 0, 0, 0, 0, 
             0x04, 0x00, 0x02, 0x12, 'U', 'L', 4, 0, 0, 0, 0, 0, 
             0x04, 0x00, 0x12, 0x12, 'U', 'S', 2, 0, 0, 0, 
             0x04, 0x00, 0x20, 0x12, 'S', 'Q', 0, 0, 0, 0, 0, 0 };
 
-    private final byte[] dirRecordHeader = { 
+    protected final byte[] dirRecordHeader = { 
             0x04, 0x00, 0x00, 0x14, 'U', 'L', 4, 0, 0, 0, 0, 0, 
             0x04, 0x00, 0x10, 0x14, 'U', 'S', 2, 0, 0, 0, 
             0x04, 0x00, 0x20, 0x14, 'U', 'L', 4, 0, 0, 0, 0, 0 };
 
-    private final DicomOutputStream out;
-    private final int firstRecordPos;
-    private int nextRecordPos;
-    private int rollbackLen = -1;
-    private IdentityHashMap<Attributes,Attributes> lastChildRecords =
+    protected final DicomOutputStream out;
+    protected final int firstRecordPos;
+    protected int nextRecordPos;
+    protected int rollbackLen = -1;
+    protected IdentityHashMap<Attributes,Attributes> lastChildRecords =
             new IdentityHashMap<Attributes,Attributes>();
-    private final ArrayList<Attributes> dirtyRecords =
+    protected final ArrayList<Attributes> dirtyRecords =
             new ArrayList<Attributes>();
 
-    private DicomDirWriter(File file) throws IOException {
+    protected DicomDirWriter(File file) throws IOException {
         super(file, "rw");
         out = new DicomOutputStream(new RAFOutputStreamAdapter(raf),
                 super.getTransferSyntaxUID());
@@ -147,7 +147,7 @@ public class DicomDirWriter extends DicomDirReader {
         }
     }
 
-    private static Attributes createFileSetInformation(File file, String id,
+    protected static Attributes createFileSetInformation(File file, String id,
             File descFile, String charset) {
         Attributes fsInfo = new Attributes(7);
         fsInfo.setString(Tag.FileSetID, VR.CS, id);
@@ -286,7 +286,7 @@ public class DicomDirWriter extends DicomDirReader {
         return toFileIDs(file, f);
     }
 
-    private static String[] toFileIDs(File dfile, File f) {
+    protected static String[] toFileIDs(File dfile, File f) {
         String dfilepath = dfile.getAbsolutePath();
         int dend = dfilepath.lastIndexOf(File.separatorChar) + 1;
         String dpath = dfilepath.substring(0, dend);
@@ -297,7 +297,7 @@ public class DicomDirWriter extends DicomDirReader {
         return StringUtils.split(fpath.substring(dend), File.separatorChar);
     }
 
-    private void updateDirInfoHeader() {
+    protected void updateDirInfoHeader() {
         ByteUtils.intToBytesLE(
                 getOffsetOfFirstRootDirectoryRecord(),
                 dirInfoHeader, 8);
@@ -310,20 +310,20 @@ public class DicomDirWriter extends DicomDirReader {
                 dirInfoHeader, 42);
     }
 
-    private void restoreDirInfo() {
+    protected void restoreDirInfo() {
         setOffsetOfFirstRootDirectoryRecord(
                 ByteUtils.bytesToIntLE(dirInfoHeader, 8));
         setOffsetOfLastRootDirectoryRecord(
                 ByteUtils.bytesToIntLE(dirInfoHeader, 20));
     }
 
-    private void writeDirInfoHeader() throws IOException {
+    protected void writeDirInfoHeader() throws IOException {
         updateDirInfoHeader();
         raf.seek(firstRecordPos - dirInfoHeader.length);
         raf.write(dirInfoHeader);
     }
 
-    private void writeDirRecordHeader(Attributes rec) throws IOException {
+    protected void writeDirRecordHeader(Attributes rec) throws IOException {
         ByteUtils.intToBytesLE(
                 rec.getInt(Tag.OffsetOfTheNextDirectoryRecord, 0),
                 dirRecordHeader, 8);
@@ -337,19 +337,19 @@ public class DicomDirWriter extends DicomDirReader {
         raf.write(dirRecordHeader);
     }
 
-    private void writeSequenceDelimitationItem() throws IOException {
+    protected void writeSequenceDelimitationItem() throws IOException {
         raf.seek(nextRecordPos);
         out.writeHeader(Tag.SequenceDelimitationItem, null, 0);
     }
 
-    private void addRecord(int tag, Attributes prevRec, Attributes rec)
+    protected void addRecord(int tag, Attributes prevRec, Attributes rec)
             throws IOException {
         prevRec.setInt(tag, VR.UL, nextRecordPos);
         markAsDirty(prevRec);
         writeRecord(nextRecordPos, rec);
     }
 
-    private void writeRecord(int offset, Attributes rec) throws IOException {
+    protected void writeRecord(int offset, Attributes rec) throws IOException {
         if (LOG.isInfoEnabled())
             LOG.info("M-UPDATE {}: add {} Record", file,
                     rec.getString(Tag.DirectoryRecordType, null));
@@ -368,13 +368,13 @@ public class DicomDirWriter extends DicomDirReader {
         cache.put(offset, rec);
     }
 
-    private void writeFileSetConsistencyFlag(int flag) throws IOException {
+    protected void writeFileSetConsistencyFlag(int flag) throws IOException {
         raf.seek(firstRecordPos - 14);
         raf.writeShort(flag);
         setFileSetConsistencyFlag(flag);
     }
 
-    private static final Comparator<Attributes> offsetComparator =
+    protected static final Comparator<Attributes> offsetComparator =
             new Comparator<Attributes>() {
         public int compare(Attributes item1, Attributes item2) {
             long d = item1.getItemPosition() - item2.getItemPosition();
@@ -382,7 +382,7 @@ public class DicomDirWriter extends DicomDirReader {
         }
     };
 
-    private void markAsDirty(Attributes rec) {
+    protected void markAsDirty(Attributes rec) {
         int index = Collections.binarySearch(dirtyRecords, rec, offsetComparator);
         if (index < 0)
             dirtyRecords.add(-(index + 1), rec);
@@ -394,7 +394,7 @@ public class DicomDirWriter extends DicomDirReader {
         return count[0];
     }
 
-    private boolean purge(Attributes rec, int[] count) throws IOException {
+    protected boolean purge(Attributes rec, int[] count) throws IOException {
         boolean purge = true;
         while (rec != null) {
             if (purge(findLowerDirectoryRecordInUse(rec, false), count)

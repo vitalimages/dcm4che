@@ -51,12 +51,12 @@ import org.dcm4che3.io.DicomOutputStream;
  */
 public class Fragments extends ArrayList<Object> implements Value {
 
-    private static final long serialVersionUID = -6667210062541083610L;
+    protected static final long serialVersionUID = -6667210062541083610L;
 
-    private final String privateCreator;
-    private final int tag;
-    private final VR vr;
-    private final boolean bigEndian;
+    protected final String privateCreator;
+    protected final int tag;
+    protected final VR vr;
+    protected final boolean bigEndian;
 
     public Fragments(String privateCreator, int tag, VR vr, boolean bigEndian, int initialCapacity) {
         super(initialCapacity);
@@ -70,15 +70,15 @@ public class Fragments extends ArrayList<Object> implements Value {
         return privateCreator;
     }
 
-    public final int tag() {
+    public int tag() {
         return tag;
     }
 
-    public final VR vr() {
+    public VR vr() {
         return vr;
     }
 
-    public final boolean bigEndian() {
+    public boolean bigEndian() {
         return bigEndian;
     }
 

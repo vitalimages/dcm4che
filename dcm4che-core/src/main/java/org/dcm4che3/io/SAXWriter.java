@@ -63,34 +63,34 @@ import org.xml.sax.helpers.AttributesImpl;
  */
 public class SAXWriter implements DicomInputHandler {
 
-    private static final String NAMESPACE = "http://dicom.nema.org/PS3.19/models/NativeDICOM";
-    private static final int BASE64_CHUNK_LENGTH = 256 * 3;
-    private static final int BUFFER_LENGTH = 256 * 4;
+    protected static final String NAMESPACE = "http://dicom.nema.org/PS3.19/models/NativeDICOM";
+    protected static final int BASE64_CHUNK_LENGTH = 256 * 3;
+    protected static final int BUFFER_LENGTH = 256 * 4;
     
-    private boolean includeKeyword = true;
-    private String namespace = "";
+    protected boolean includeKeyword = true;
+    protected String namespace = "";
 
-    private final ContentHandler ch;
-    private final AttributesImpl atts = new AttributesImpl();
-    private final char[] buffer = new char[BUFFER_LENGTH];
+    protected final ContentHandler ch;
+    protected final AttributesImpl atts = new AttributesImpl();
+    protected final char[] buffer = new char[BUFFER_LENGTH];
 
     public SAXWriter(ContentHandler ch) {
         this.ch = ch;
     }
 
-    public final boolean isIncludeKeyword() {
+    public boolean isIncludeKeyword() {
         return includeKeyword;
     }
 
-    public final void setIncludeKeyword(boolean includeKeyword) {
+    public void setIncludeKeyword(boolean includeKeyword) {
         this.includeKeyword = includeKeyword;
     }
 
-    public final boolean isIncludeNamespaceDeclaration() {
+    public boolean isIncludeNamespaceDeclaration() {
         return namespace == NAMESPACE;
     }
 
-    public final void setIncludeNamespaceDeclaration(boolean includeNameSpaceDeclaration) {
+    public void setIncludeNamespaceDeclaration(boolean includeNameSpaceDeclaration) {
         this.namespace = includeNameSpaceDeclaration ? NAMESPACE : "";
     }
 
@@ -100,7 +100,7 @@ public class SAXWriter implements DicomInputHandler {
         endDocument();
     }
 
-    private void writeItem(final Attributes item) throws SAXException {
+    protected void writeItem(final Attributes item) throws SAXException {
         final SpecificCharacterSet cs = item.getSpecificCharacterSet();
         try {
             item.accept(new Attributes.Visitor(){
@@ -138,41 +138,41 @@ public class SAXWriter implements DicomInputHandler {
         }
     }
 
-    private void startDocument() throws SAXException {
+    protected void startDocument() throws SAXException {
         ch.startDocument();
         startElement("NativeDicomModel", "xml:space", "preserve");
     }
 
-    private void endDocument() throws SAXException {
+    protected void endDocument() throws SAXException {
         endElement("NativeDicomModel");
         ch.endDocument();
     }
 
-    private void startElement(String name, String attrName, int attrValue)
+    protected void startElement(String name, String attrName, int attrValue)
             throws SAXException {
         startElement(name, attrName, Integer.toString(attrValue));
     }
 
-    private void startElement(String name, String attrName, String attrValue)
+    protected void startElement(String name, String attrName, String attrValue)
             throws SAXException {
         addAttribute(attrName, attrValue);
         startElement(name);
     }
 
-    private void startElement(String name) throws SAXException {
+    protected void startElement(String name) throws SAXException {
         ch.startElement(namespace, name, name, atts);
         atts.clear();
     }
 
-    private void endElement(String name) throws SAXException {
+    protected void endElement(String name) throws SAXException {
         ch.endElement(namespace, name, name);
     }
 
-    private void addAttribute(String name, String value) {
+    protected void addAttribute(String name, String value) {
         atts.addAttribute(namespace, name, name, "NMTOKEN", value);
     }
 
-    private void writeAttribute(int tag, VR vr, Object value,
+    protected void writeAttribute(int tag, VR vr, Object value,
             SpecificCharacterSet cs, Attributes attrs) throws SAXException {
         if (TagUtils.isGroupLength(tag) || TagUtils.isPrivateCreator(tag))
             return;
@@ -195,7 +195,7 @@ public class SAXWriter implements DicomInputHandler {
         endElement("DicomAttribute");
     }
 
-    private void writeAttribute(Value value, boolean bigEndian)
+    protected void writeAttribute(Value value, boolean bigEndian)
             throws SAXException {
         if (value.isEmpty())
             return;
@@ -278,7 +278,7 @@ public class SAXWriter implements DicomInputHandler {
         }
     }
 
-    private void addAttributes(int tag, VR vr, String privateCreator) {
+    protected void addAttributes(int tag, VR vr, String privateCreator) {
         if (privateCreator != null)
             tag &= 0xffff00ff;
         if (includeKeyword) {
@@ -333,7 +333,7 @@ public class SAXWriter implements DicomInputHandler {
         frags.add(frag); // increment size
     }
 
-    private void writeValues(VR vr, Object val, boolean bigEndian,
+    protected void writeValues(VR vr, Object val, boolean bigEndian,
             SpecificCharacterSet cs) throws SAXException {
         if (vr.isStringType())
             val = vr.toStrings(val, bigEndian, cs);
@@ -354,7 +354,7 @@ public class SAXWriter implements DicomInputHandler {
         }
     }
 
-    private void writeInlineBinary(byte[] b) throws SAXException {
+    protected void writeInlineBinary(byte[] b) throws SAXException {
         startElement("InlineBinary");
         char[] buf = buffer;
         for (int off = 0; off < b.length;) {
@@ -366,17 +366,17 @@ public class SAXWriter implements DicomInputHandler {
         endElement("InlineBinary");
     }
 
-    private void writeBulkData(BulkData bulkData)
+    protected void writeBulkData(BulkData bulkData)
             throws SAXException {
-        if (bulkData.uuid != null)
-            addAttribute("uuid", bulkData.uuid);
-        if (bulkData.uri != null)
-            addAttribute("uri", bulkData.uri);
+        if (bulkData.getUuid() != null)
+            addAttribute("uuid", bulkData.getUuid());
+        if (bulkData.getUri() != null)
+            addAttribute("uri", bulkData.getUri());
         startElement("BulkData");
         endElement("BulkData");
     }
 
-    private void writeElement(String qname, String s) throws SAXException {
+    protected void writeElement(String qname, String s) throws SAXException {
         if (s != null) {
             startElement(qname); 
             char[] buf = buffer;
@@ -389,7 +389,7 @@ public class SAXWriter implements DicomInputHandler {
         }
     }
 
-    private void writePNGroup(String qname, PersonName pn,
+    protected void writePNGroup(String qname, PersonName pn,
             PersonName.Group group) throws SAXException {
         if (pn.contains(group)) {
             startElement(qname); 

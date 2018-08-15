@@ -94,47 +94,47 @@ import org.slf4j.LoggerFactory;
  */
 public class DicomImageReader extends ImageReader {
 
-    private static final Logger LOG = LoggerFactory.getLogger(DicomImageReader.class);
+    protected static final Logger LOG = LoggerFactory.getLogger(DicomImageReader.class);
 
-    private ImageInputStream iis;
+    protected ImageInputStream iis;
 
-    private Attributes ds;
+    protected Attributes ds;
 
-    private DicomMetaData metadata;
+    protected DicomMetaData metadata;
 
-    private int frames;
+    protected int frames;
 
-    private int width;
+    protected int width;
 
-    private int height;
+    protected int height;
 
-    private BulkData pixeldata;
+    protected BulkData pixeldata;
 
-    private final VR.Holder pixeldataVR = new VR.Holder();
+    protected final VR.Holder pixeldataVR = new VR.Holder();
 
-    private Fragments pixeldataFragments;
+    protected Fragments pixeldataFragments;
 
-    private File pixeldataFile;
+    protected File pixeldataFile;
 
-    private ImageReader decompressor;
+    protected ImageReader decompressor;
 
-    private boolean rle;
+    protected boolean rle;
 
-    private PatchJPEGLS patchJpegLS;
+    protected PatchJPEGLS patchJpegLS;
 
-    private int samples;
+    protected int samples;
 
-    private boolean banded;
+    protected boolean banded;
 
-    private int bitsStored;
+    protected int bitsStored;
 
-    private int bitsAllocated;
+    protected int bitsAllocated;
 
-    private int dataType;
+    protected int dataType;
 
-    private int frameLength;
+    protected int frameLength;
 
-    private PhotometricInterpretation pmi;
+    protected PhotometricInterpretation pmi;
 
     public DicomImageReader(ImageReaderSpi originatingProvider) {
         super(originatingProvider);
@@ -224,12 +224,12 @@ public class DicomImageReader extends ImageReader {
         return Collections.singletonList(imageType).iterator();
     }
 
-    private void openiis() throws FileNotFoundException, IOException {
+    protected void openiis() throws FileNotFoundException, IOException {
         if (pixeldataFile != null && iis == null)
             iis = new FileImageInputStream(pixeldataFile);
     }
 
-    private void closeiis() throws IOException {
+    protected void closeiis() throws IOException {
         if (pixeldataFile != null && iis != null) {
             iis.close();
             iis = null;
@@ -288,7 +288,7 @@ public class DicomImageReader extends ImageReader {
                 byte[][] data = ((DataBufferByte) buf).getBankData();
                 for (byte[] bs : data)
                     iis.readFully(bs);
-                if (pixeldata.bigEndian && pixeldataVR.vr == VR.OW)
+                if (pixeldata.bigEndian() && pixeldataVR.vr == VR.OW)
                     ByteUtils.swapShorts(data);
             } else {
                 short[] data = ((DataBufferUShort) buf).getData();
@@ -300,7 +300,7 @@ public class DicomImageReader extends ImageReader {
         }
     }
 
-    private ImageReadParam decompressParam(ImageReadParam param) {
+    protected ImageReadParam decompressParam(ImageReadParam param) {
         ImageReadParam decompressParam = decompressor.getDefaultReadParam();
         ImageTypeSpecifier imageType = null;
         BufferedImage dest = null;
@@ -361,7 +361,7 @@ public class DicomImageReader extends ImageReader {
         return new BufferedImage(cm, raster , false, null);
     }
 
-    private byte[] extractOverlay(int gg0000, WritableRaster raster) {
+    protected byte[] extractOverlay(int gg0000, WritableRaster raster) {
         Attributes attrs = metadata.getAttributes();
 
         if (attrs.getInt(Tag.OverlayBitsAllocated | gg0000, 1) == 1)
@@ -380,7 +380,7 @@ public class DicomImageReader extends ImageReader {
     }
 
     @SuppressWarnings("resource")
-    private ImageInputStreamImpl iisOfFrame(int frameIndex)
+    protected ImageInputStreamImpl iisOfFrame(int frameIndex)
             throws IOException {
         SegmentedImageInputStream siis = SegmentedImageInputStream.ofFrame(
                 iis, pixeldataFragments, frameIndex, frames);
@@ -389,7 +389,7 @@ public class DicomImageReader extends ImageReader {
                 : siis;
     }
 
-    private void applyOverlay(int gg0000, WritableRaster raster,
+    protected void applyOverlay(int gg0000, WritableRaster raster,
             int frameIndex, ImageReadParam param, int outBits, byte[] ovlyData) {
         Attributes ovlyAttrs = metadata.getAttributes();
         int grayscaleValue = 0xffff;
@@ -408,7 +408,7 @@ public class DicomImageReader extends ImageReader {
                 ovlyAttrs, gg0000, grayscaleValue >>> (16-outBits), ovlyData);
     }
 
-    private int[] getActiveOverlayGroupOffsets(ImageReadParam param) {
+    protected int[] getActiveOverlayGroupOffsets(ImageReadParam param) {
         if (param instanceof DicomImageReadParam) {
             DicomImageReadParam dParam = (DicomImageReadParam) param;
             Attributes psAttrs = dParam.getPresentationState();
@@ -424,7 +424,7 @@ public class DicomImageReader extends ImageReader {
                 0xffff);
     }
 
-    private WritableRaster applyLUTs(WritableRaster raster,
+    protected WritableRaster applyLUTs(WritableRaster raster,
             int frameIndex, ImageReadParam param, SampleModel sm, int outBits) {
          WritableRaster destRaster =
                 sm.getDataType() == raster.getSampleModel().getDataType()
@@ -472,7 +472,7 @@ public class DicomImageReader extends ImageReader {
         return destRaster;
     }
 
-    private Attributes selectFctGroup(Attributes imgAttrs,
+    protected Attributes selectFctGroup(Attributes imgAttrs,
             Attributes sharedFctGroups, 
             Attributes frameFctGroups,
             int tag) {
@@ -486,7 +486,7 @@ public class DicomImageReader extends ImageReader {
         return group != null ? group : imgAttrs;
     }
 
-    private Attributes selectVOILUT(Attributes psAttrs, String iuid, int frame) {
+    protected Attributes selectVOILUT(Attributes psAttrs, String iuid, int frame) {
         Sequence voiLUTs = psAttrs.getSequence(Tag.SoftcopyVOILUTSequence);
         if (voiLUTs != null)
             for (Attributes voiLUT : voiLUTs) {
@@ -508,7 +508,7 @@ public class DicomImageReader extends ImageReader {
         return null;
     }
 
-    private void readMetadata() throws IOException {
+    protected void readMetadata() throws IOException {
         if (metadata != null)
             return;
 
@@ -525,7 +525,7 @@ public class DicomImageReader extends ImageReader {
         setMetadata(new DicomMetaData(fmi, ds));
     }
 
-    private void setMetadata(DicomMetaData metadata) {
+    protected void setMetadata(DicomMetaData metadata) {
         this.metadata = metadata;
         this.ds = metadata.getAttributes();
         Object pixeldata = ds.getValue(Tag.PixelData, pixeldataVR );
@@ -562,21 +562,21 @@ public class DicomImageReader extends ImageReader {
         }
     }
 
-    private SampleModel createSampleModel(int dataType, boolean banded) {
+    protected SampleModel createSampleModel(int dataType, boolean banded) {
         return pmi.createSampleModel(dataType, width, height, samples, banded);
     }
 
-    private ImageTypeSpecifier createImageType(int bits, int dataType, boolean banded) {
+    protected ImageTypeSpecifier createImageType(int bits, int dataType, boolean banded) {
         return new ImageTypeSpecifier(
                 createColorModel(bits, dataType),
                 createSampleModel(dataType, banded));
     }
 
-    private ColorModel createColorModel(int bits, int dataType) {
+    protected ColorModel createColorModel(int bits, int dataType) {
         return pmi.createColorModel(bits, dataType, metadata.getAttributes());
     }
 
-    private void resetInternalState() {
+    protected void resetInternalState() {
         metadata = null;
         ds = null;
         pixeldataFile = null;
@@ -593,7 +593,7 @@ public class DicomImageReader extends ImageReader {
         pmi = null;
     }
 
-    private void checkIndex(int frameIndex) {
+    protected void checkIndex(int frameIndex) {
         if (frames == 0)
             throw new IllegalStateException("Missing Pixel Data");
         

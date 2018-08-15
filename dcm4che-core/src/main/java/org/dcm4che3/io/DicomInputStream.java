@@ -78,59 +78,59 @@ public class DicomInputStream extends FilterInputStream
 
     public enum IncludeBulkData { NO, YES, URI }
 
-    private static final Logger LOG = 
+    protected static final Logger LOG = 
         LoggerFactory.getLogger(DicomInputStream.class);
 
-    private static final String UNEXPECTED_NON_ZERO_ITEM_LENGTH =
+    protected static final String UNEXPECTED_NON_ZERO_ITEM_LENGTH =
         "Unexpected item value of {} #{} @ {}";
-    private static final String UNEXPECTED_ATTRIBUTE =
+    protected static final String UNEXPECTED_ATTRIBUTE =
         "Unexpected attribute {} #{} @ {}";
-    private static final String MISSING_TRANSFER_SYNTAX =
+    protected static final String MISSING_TRANSFER_SYNTAX =
         "Missing Transfer Syntax (0002,0010) - assume Explicit VR Little Endian";
-    private static final String MISSING_FMI_LENGTH =
+    protected static final String MISSING_FMI_LENGTH =
         "Missing or wrong File Meta Information Group Length (0002,0000)";
-    private static final String NOT_A_DICOM_STREAM = 
+    protected static final String NOT_A_DICOM_STREAM = 
         "Not a DICOM Stream";
-    private static final String IMPLICIT_VR_BIG_ENDIAN =
+    protected static final String IMPLICIT_VR_BIG_ENDIAN =
         "Implicit VR Big Endian encoded DICOM Stream";
-    private static final String DEFLATED_WITH_ZLIB_HEADER =
+    protected static final String DEFLATED_WITH_ZLIB_HEADER =
         "Deflated DICOM Stream with ZLIB Header";
 
-    private static final int ZLIB_HEADER = 0x789c;
-    private static final int DEF_ALLOCATE_LIMIT = 0x4000000; // 64MiB
+    protected static final int ZLIB_HEADER = 0x789c;
+    protected static final int DEF_ALLOCATE_LIMIT = 0x4000000; // 64MiB
 
-    private int allocateLimit = DEF_ALLOCATE_LIMIT;
-    private String uri;
-    private String tsuid;
-    private byte[] preamble;
-    private Attributes fileMetaInformation;
-    private boolean hasfmi;
-    private boolean bigEndian;
-    private boolean explicitVR;
-    private IncludeBulkData includeBulkData = IncludeBulkData.YES;
-    private IncludeBulkData includeFragmentBulkData;
-    private long pos;
-    private long fmiEndPos = -1L;
-    private long tagPos;
-    private long markPos;
-    private int tag;
-    private VR vr;
-    private int length;
-    private DicomInputHandler handler = this;
-    private BulkDataDescriptor bulkDataDescriptor = BulkDataDescriptor.DEFAULT;
-    private final byte[] buffer = new byte[12];
-    private ItemPointer[] itemPointers = {};
-    private boolean decodeUNWithIVRLE = true;
-    private boolean addBulkDataReferences;
+    protected int allocateLimit = DEF_ALLOCATE_LIMIT;
+    protected String uri;
+    protected String tsuid;
+    protected byte[] preamble;
+    protected Attributes fileMetaInformation;
+    protected boolean hasfmi;
+    protected boolean bigEndian;
+    protected boolean explicitVR;
+    protected IncludeBulkData includeBulkData = IncludeBulkData.YES;
+    protected IncludeBulkData includeFragmentBulkData;
+    protected long pos;
+    protected long fmiEndPos = -1L;
+    protected long tagPos;
+    protected long markPos;
+    protected int tag;
+    protected VR vr;
+    protected int length;
+    protected DicomInputHandler handler = this;
+    protected BulkDataDescriptor bulkDataDescriptor = BulkDataDescriptor.DEFAULT;
+    protected final byte[] buffer = new byte[12];
+    protected ItemPointer[] itemPointers = {};
+    protected boolean decodeUNWithIVRLE = true;
+    protected boolean addBulkDataReferences;
 
-    private boolean catBlkFiles = true;
-    private String blkFilePrefix = "blk";
-    private String blkFileSuffix;
-    private File blkDirectory;
-    private ArrayList<File> blkFiles;
-    private String blkURI;
-    private FileOutputStream blkOut;
-    private long blkOutPos;
+    protected boolean catBlkFiles = true;
+    protected String blkFilePrefix = "blk";
+    protected String blkFileSuffix;
+    protected File blkDirectory;
+    protected ArrayList<File> blkFiles;
+    protected String blkURI;
+    protected FileOutputStream blkOut;
+    protected long blkOutPos;
 
     public DicomInputStream(InputStream in, String tsuid) throws IOException {
         super(in);
@@ -147,7 +147,7 @@ public class DicomInputStream extends FilterInputStream
         uri = file.toURI().toString();
     }
 
-    public final String getTransferSyntax() {
+    public String getTransferSyntax() {
         return tsuid;
     }
 
@@ -159,7 +159,7 @@ public class DicomInputStream extends FilterInputStream
      * @return Limit of initial allocated memory for value or -1 for no limit
      * @see #setAllocateLimit(int)
      */
-    public final int getAllocateLimit() {
+    public int getAllocateLimit() {
         return allocateLimit;
     }
 
@@ -181,80 +181,80 @@ public class DicomInputStream extends FilterInputStream
      * @param allocateLimit limit of initial allocated memory or -1 for no limit
      * 
      */
-    public final void setAllocateLimit(int allocateLimit) {
+    public void setAllocateLimit(int allocateLimit) {
         this.allocateLimit = allocateLimit;
     }
 
-    public final String getURI() {
+    public String getURI() {
         return uri;
     }
 
-    public final void setURI(String uri) {
+    public void setURI(String uri) {
         this.uri = uri;
     }
 
-    public final IncludeBulkData getIncludeBulkData() {
+    public IncludeBulkData getIncludeBulkData() {
         return includeBulkData;
     }
 
-    public final void setIncludeBulkData(IncludeBulkData includeBulkData) {
+    public void setIncludeBulkData(IncludeBulkData includeBulkData) {
         if (includeBulkData == null)
             throw new NullPointerException();
         this.includeBulkData = includeBulkData;
     }
 
-    public final IncludeBulkData getIncludeFragmentBulkData() {
+    public IncludeBulkData getIncludeFragmentBulkData() {
         return includeFragmentBulkData;
     }
 
-    public final BulkDataDescriptor getBulkDataDescriptor() {
+    public BulkDataDescriptor getBulkDataDescriptor() {
         return bulkDataDescriptor;
     }
 
-    public final void setBulkDataDescriptor(BulkDataDescriptor bulkDataDescriptor) {
+    public void setBulkDataDescriptor(BulkDataDescriptor bulkDataDescriptor) {
         this.bulkDataDescriptor = bulkDataDescriptor;
     }
 
-    public final String getBulkDataFilePrefix() {
+    public String getBulkDataFilePrefix() {
         return blkFilePrefix;
     }
 
-    public final void setBulkDataFilePrefix(String blkFilePrefix) {
+    public void setBulkDataFilePrefix(String blkFilePrefix) {
         this.blkFilePrefix = blkFilePrefix;
     }
 
-    public final String getBulkDataFileSuffix() {
+    public String getBulkDataFileSuffix() {
         return blkFileSuffix;
     }
 
-    public final void setBulkDataFileSuffix(String blkFileSuffix) {
+    public void setBulkDataFileSuffix(String blkFileSuffix) {
         this.blkFileSuffix = blkFileSuffix;
     }
 
-    public final File getBulkDataDirectory() {
+    public File getBulkDataDirectory() {
         return blkDirectory;
     }
 
-    public final void setBulkDataDirectory(File blkDirectory) {
+    public void setBulkDataDirectory(File blkDirectory) {
         this.blkDirectory = blkDirectory;
     }
 
-    public final boolean isConcatenateBulkDataFiles() {
+    public boolean isConcatenateBulkDataFiles() {
         return catBlkFiles;
     }
 
-    public final void setConcatenateBulkDataFiles(boolean catBlkFiles) {
+    public void setConcatenateBulkDataFiles(boolean catBlkFiles) {
         this.catBlkFiles = catBlkFiles;
     }
 
-    public final List<File> getBulkDataFiles() {
+    public List<File> getBulkDataFiles() {
         if (blkFiles != null)
             return blkFiles;
         else
             return Collections.emptyList();
     }
 
-    public final void setDicomInputHandler(DicomInputHandler handler) {
+    public void setDicomInputHandler(DicomInputHandler handler) {
         if (handler == null)
             throw new NullPointerException("handler");
         this.handler = handler;
@@ -276,11 +276,11 @@ public class DicomInputStream extends FilterInputStream
         this.addBulkDataReferences = addBulkDataReferences;
     }
 
-    public final void setFileMetaInformationGroupLength(byte[] val) {
+    public void setFileMetaInformationGroupLength(byte[] val) {
         fmiEndPos = pos + ByteUtils.bytesToInt(val, 0, bigEndian);
     }
 
-    public final byte[] getPreamble() {
+    public byte[] getPreamble() {
         return preamble;
     }
 
@@ -289,23 +289,23 @@ public class DicomInputStream extends FilterInputStream
         return fileMetaInformation;
     }
 
-    public final int level() {
+    public int level() {
         return itemPointers.length;
     }
 
-    public final int tag() {
+    public int tag() {
         return tag;
     }
 
-    public final VR vr() {
+    public VR vr() {
         return vr;
     }
 
-    public final int length() {
+    public int length() {
         return length;
     }
 
-    public final long getPosition() {
+    public long getPosition() {
         return pos;
     }
 
@@ -317,11 +317,11 @@ public class DicomInputStream extends FilterInputStream
         return tagPos;
     }
 
-    public final boolean bigEndian() {
+    public boolean bigEndian() {
         return bigEndian;
     }
 
-    public final boolean explicitVR() {
+    public boolean explicitVR() {
         return explicitVR;
     }
 
@@ -344,7 +344,7 @@ public class DicomInputStream extends FilterInputStream
     }
 
     @Override
-    public final int read() throws IOException {
+    public int read() throws IOException {
         int read = super.read();
         if (read >= 0)
             pos++;
@@ -352,7 +352,7 @@ public class DicomInputStream extends FilterInputStream
     }
 
     @Override
-    public final int read(byte[] b, int off, int len) throws IOException {
+    public int read(byte[] b, int off, int len) throws IOException {
         int read = super.read(b, off, len);
         if (read > 0)
             pos += read;
@@ -360,12 +360,12 @@ public class DicomInputStream extends FilterInputStream
     }
 
     @Override
-    public final int read(byte[] b) throws IOException {
+    public int read(byte[] b) throws IOException {
         return read(b, 0, b.length);
     }
 
     @Override
-    public final long skip(long n) throws IOException {
+    public long skip(long n) throws IOException {
         long skip = super.skip(n);
         pos += skip;
         return skip;
@@ -621,18 +621,18 @@ public class DicomInputStream extends FilterInputStream
     public void endDataset(DicomInputStream dis) {
     }
 
-    private void checkIsThis(DicomInputStream dis) {
+    protected void checkIsThis(DicomInputStream dis) {
         if (dis != this)
             throw new IllegalArgumentException("dis != this");
     }
 
-    private void skipAttribute(String message) throws IOException {
+    protected void skipAttribute(String message) throws IOException {
         LOG.warn(message,
                  new Object[] { TagUtils.toString(tag), length, tagPos });
         skip(length);
     }
 
-    private void readSequence(int len, Attributes attrs, int sqtag)
+    protected void readSequence(int len, Attributes attrs, int sqtag)
             throws IOException {
         if (len == 0) {
             attrs.setNull(sqtag, VR.SQ);
@@ -671,7 +671,7 @@ public class DicomInputStream extends FilterInputStream
         return attrs;
     }
 
-    private void readFragments(Attributes attrs, int fragsTag, VR vr)
+    protected void readFragments(Attributes attrs, int fragsTag, VR vr)
             throws IOException {
         includeFragmentBulkData =
                 includeBulkData == IncludeBulkData.YES || isBulkData(attrs)
@@ -723,7 +723,7 @@ public class DicomInputStream extends FilterInputStream
         }
     }
 
-    private void switchTransferSyntax(String tsuid) throws IOException {
+    protected void switchTransferSyntax(String tsuid) throws IOException {
         this.tsuid = tsuid;
         bigEndian = tsuid.equals(UID.ExplicitVRBigEndianRetired);
         explicitVR = !tsuid.equals(UID.ImplicitVRLittleEndian);
@@ -738,7 +738,7 @@ public class DicomInputStream extends FilterInputStream
         }
     }
 
-    private boolean hasZLIBHeader() throws IOException {
+    protected boolean hasZLIBHeader() throws IOException {
         if (!markSupported())
             return false;
         byte[] buf = buffer;
@@ -748,7 +748,7 @@ public class DicomInputStream extends FilterInputStream
         return ByteUtils.bytesToUShortBE(buf, 0) == ZLIB_HEADER;
     }
 
-    private void guessTransferSyntax() throws IOException {
+    protected void guessTransferSyntax() throws IOException {
         byte[] b128 = new byte[128];
         byte[] buf = buffer;
         mark(132);
@@ -778,7 +778,7 @@ public class DicomInputStream extends FilterInputStream
                 ByteUtils.bytesToTag(b128, 0, bigEndian));
     }
 
-    private boolean guessTransferSyntax(byte[] b128, int rlen, boolean bigEndian)
+    protected boolean guessTransferSyntax(byte[] b128, int rlen, boolean bigEndian)
             throws DicomStreamException {
         int tag1 = ByteUtils.bytesToTag(b128, 0, bigEndian);
         VR vr = ElementDictionary.vrOf(tag1, null);

@@ -81,22 +81,22 @@ import org.slf4j.LoggerFactory;
  */
 public class Compressor extends Decompressor implements Closeable {
 
-    private static final Logger LOG = LoggerFactory.getLogger(Compressor.class);
+    protected static final Logger LOG = LoggerFactory.getLogger(Compressor.class);
 
-    private BulkData pixeldata;
-    private VR.Holder pixeldataVR = new VR.Holder();
-    private ImageWriter compressor;
-    private ImageReader verifier;
-    private PatchJPEGLS compressPatchJPEGLS;
-    private ImageWriteParam compressParam;
-    private ImageInputStream iis;
-    private IOException ex;
-    private int[] embeddedOverlays;
-    private int maxPixelValueError = -1;
-    private int avgPixelValueBlockSize = 1;
-    private BufferedImage bi2;
+    protected BulkData pixeldata;
+    protected VR.Holder pixeldataVR = new VR.Holder();
+    protected ImageWriter compressor;
+    protected ImageReader verifier;
+    protected PatchJPEGLS compressPatchJPEGLS;
+    protected ImageWriteParam compressParam;
+    protected ImageInputStream iis;
+    protected IOException ex;
+    protected int[] embeddedOverlays;
+    protected int maxPixelValueError = -1;
+    protected int avgPixelValueBlockSize = 1;
+    protected BufferedImage bi2;
 
-    private ImageReadParam verifyParam;
+    protected ImageReadParam verifyParam;
 
     public Compressor(Attributes dataset, String from) {
         super(dataset, from);
@@ -187,7 +187,7 @@ public class Compressor extends Decompressor implements Closeable {
         return true;
     }
 
-    private Property[] cat(Property[] a, Property[] b) {
+    protected Property[] cat(Property[] a, Property[] b) {
         if (a.length == 0)
             return b;
         if (b.length == 0)
@@ -218,12 +218,12 @@ public class Compressor extends Decompressor implements Closeable {
         verifier = null;
     }
 
-    private class CompressedFrame implements Value {
+    protected class CompressedFrame implements Value {
 
-        private int frameIndex;
-        private int streamLength;
-        private CacheOutputStream cacheout = new CacheOutputStream();
-        private MemoryCacheImageOutputStream cache;
+        protected int frameIndex;
+        protected int streamLength;
+        protected CacheOutputStream cacheout = new CacheOutputStream();
+        protected MemoryCacheImageOutputStream cache;
 
         public CompressedFrame(int frameIndex) throws IOException {
             this.frameIndex = frameIndex;
@@ -261,7 +261,7 @@ public class Compressor extends Decompressor implements Closeable {
             return (streamLength + 1) & ~1;
         }
         
-        private void writeTo(OutputStream out) throws IOException {
+        protected void writeTo(OutputStream out) throws IOException {
             compress();
             cacheout.set(out);
             long start = System.currentTimeMillis();
@@ -272,7 +272,7 @@ public class Compressor extends Decompressor implements Closeable {
             LOG.debug("Flushed frame #{} from memory in {} ms", frameIndex + 1, end - start);
         }
 
-        private void compress() throws IOException {
+        protected void compress() throws IOException {
             if (cache != null)
                 return;
 
@@ -315,7 +315,7 @@ public class Compressor extends Decompressor implements Closeable {
 
     }
 
-    private static class CacheOutputStream extends FilterOutputStream {
+    protected static class CacheOutputStream extends FilterOutputStream {
 
         public CacheOutputStream() {
             super(null);
@@ -333,7 +333,7 @@ public class Compressor extends Decompressor implements Closeable {
         if (decompressor != null)
             return decompressFrame(iis, frameIndex);
 
-        iis.setByteOrder(pixeldata.bigEndian
+        iis.setByteOrder(pixeldata.bigEndian()
                 ? ByteOrder.BIG_ENDIAN
                 : ByteOrder.LITTLE_ENDIAN);
         iis.seek(pixeldata.offset() + imageParams.getFrameLength() * frameIndex);
@@ -343,7 +343,7 @@ public class Compressor extends Decompressor implements Closeable {
             byte[][] data = ((DataBufferByte) db).getBankData();
             for (byte[] bs : data)
                 iis.readFully(bs);
-            if (pixeldata.bigEndian && pixeldataVR.vr == VR.OW)
+            if (pixeldata.bigEndian() && pixeldataVR.vr == VR.OW)
                 ByteUtils.swapShorts(data);
             break;
         case DataBuffer.TYPE_USHORT:
@@ -359,7 +359,7 @@ public class Compressor extends Decompressor implements Closeable {
         return bi;
     }
 
-    private void verify(ImageInputStream iis, int index)
+    protected void verify(ImageInputStream iis, int index)
             throws IOException {
         if (verifier == null)
             return;
@@ -379,7 +379,7 @@ public class Compressor extends Decompressor implements Closeable {
 
     }
 
-     private void extractEmbeddedOverlays(int frameIndex, BufferedImage bi) {
+     protected void extractEmbeddedOverlays(int frameIndex, BufferedImage bi) {
         for (int gg0000 : embeddedOverlays) {
             int ovlyRow = dataset.getInt(Tag.OverlayRows | gg0000, 0);
             int ovlyColumns = dataset.getInt(Tag.OverlayColumns | gg0000, 0);
@@ -398,7 +398,7 @@ public class Compressor extends Decompressor implements Closeable {
         }
     }
 
-    private void readFully(short[] data) throws IOException {
+    protected void readFully(short[] data) throws IOException {
         iis.readFully(data, 0, data.length);
     }
 

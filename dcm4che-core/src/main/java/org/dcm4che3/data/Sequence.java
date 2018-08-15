@@ -52,12 +52,12 @@ import org.dcm4che3.io.DicomOutputStream;
  */
 public class Sequence extends ArrayList<Attributes> implements Value {
 
-    private static final long serialVersionUID = 7062970085409148066L;
+    protected static final long serialVersionUID = 7062970085409148066L;
 
-    private final Attributes parent;
-    private final String privateCreator;
-    private final int tag;
-    private int length = -1;
+    protected final Attributes parent;
+    protected final String privateCreator;
+    protected final int tag;
+    protected int length = -1;
 
     Sequence(Attributes parent, String privateCreator, int tag, int initialCapacity) {
         super(initialCapacity);
@@ -66,7 +66,7 @@ public class Sequence extends ArrayList<Attributes> implements Value {
         this.tag = tag;
     }
 
-    public final Attributes getParent() {
+    public Attributes getParent() {
         return parent;
     }
 
@@ -102,7 +102,7 @@ public class Sequence extends ArrayList<Attributes> implements Value {
         return super.addAll(c);
     }
 
-    private void setParent(Collection<? extends Attributes> c) {
+    protected void setParent(Collection<? extends Attributes> c) {
         boolean bigEndian = parent.bigEndian();
         for (Attributes attrs : c) {
             if (attrs.bigEndian() != bigEndian)

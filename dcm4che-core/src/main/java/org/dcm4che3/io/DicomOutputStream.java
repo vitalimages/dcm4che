@@ -63,15 +63,15 @@ import org.dcm4che3.util.TagUtils;
  */
 public class DicomOutputStream extends FilterOutputStream {
 
-    private static final byte[] DICM = { 'D', 'I', 'C', 'M' };
+    protected static final byte[] DICM = { 'D', 'I', 'C', 'M' };
 
-    private byte[] preamble = new byte[128];
+    protected byte[] preamble = new byte[128];
 
-    private boolean explicitVR;
-    private boolean bigEndian;
-    private DicomEncodingOptions encOpts = DicomEncodingOptions.DEFAULT;
+    protected boolean explicitVR;
+    protected boolean bigEndian;
+    protected DicomEncodingOptions encOpts = DicomEncodingOptions.DEFAULT;
 
-    private final byte[] buf = new byte[12];
+    protected final byte[] buf = new byte[12];
 
     public DicomOutputStream(OutputStream out, String tsuid)
             throws IOException {
@@ -84,26 +84,26 @@ public class DicomOutputStream extends FilterOutputStream {
                 UID.ExplicitVRLittleEndian);
     }
 
-    public final void setPreamble(byte[] preamble) {
+    public void setPreamble(byte[] preamble) {
         if (preamble.length != 128)
             throw new IllegalArgumentException(
                     "preamble.length=" + preamble.length);
         this.preamble = preamble.clone();
     }
 
-    public final boolean isExplicitVR() {
+    public boolean isExplicitVR() {
         return explicitVR;
     }
 
-    public final boolean isBigEndian() {
+    public boolean isBigEndian() {
         return bigEndian;
     }
 
-    public final DicomEncodingOptions getEncodingOptions() {
+    public DicomEncodingOptions getEncodingOptions() {
         return encOpts;
     }
 
-    public final void setEncodingOptions(DicomEncodingOptions encOpts) {
+    public void setEncodingOptions(DicomEncodingOptions encOpts) {
         if (encOpts == null)
             throw new NullPointerException();
         this.encOpts = encOpts;
@@ -146,7 +146,7 @@ public class DicomOutputStream extends FilterOutputStream {
         dataset.writeTo(this);
     }
 
-    private void switchTransferSyntax(String tsuid) throws IOException {
+    protected void switchTransferSyntax(String tsuid) throws IOException {
         bigEndian = tsuid.equals(UID.ExplicitVRBigEndianRetired);
         explicitVR = !tsuid.equals(UID.ImplicitVRLittleEndian);
         if (tsuid.equals(UID.DeflatedExplicitVRLittleEndian)

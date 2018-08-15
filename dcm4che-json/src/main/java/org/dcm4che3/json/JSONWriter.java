@@ -298,7 +298,7 @@ public class JSONWriter implements DicomInputHandler {
     }
 
     private void writeBulkData(BulkData blkdata) {
-        gen.write("BulkDataURI", blkdata.uri);
+        gen.write("BulkDataURI", blkdata.getUri());
     }
 
     @Override

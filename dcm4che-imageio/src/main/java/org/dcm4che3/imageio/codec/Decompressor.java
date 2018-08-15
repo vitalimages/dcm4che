@@ -68,7 +68,7 @@ import org.slf4j.LoggerFactory;
  */
 public class Decompressor {
 
-    private static final Logger LOG = LoggerFactory.getLogger(Decompressor.class);
+    protected static final Logger LOG = LoggerFactory.getLogger(Decompressor.class);
 
     protected final Attributes dataset;
     protected final String tsuid;

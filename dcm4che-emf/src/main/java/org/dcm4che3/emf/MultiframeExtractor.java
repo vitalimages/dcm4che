@@ -334,7 +334,7 @@ public class MultiframeExtractor {
             int length) {
         return new BulkData(src.uriWithoutQuery(),
                 src.offset() + frame * length, length,
-                src.bigEndian);
+                src.bigEndian());
     }
 
     private byte[] extractPixelData(byte[] src, int frame, int length) {

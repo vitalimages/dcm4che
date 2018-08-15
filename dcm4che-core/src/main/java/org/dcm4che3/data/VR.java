@@ -79,7 +79,7 @@ public enum VR {
     US(0x5553, 8, 0, BinaryValueType.USHORT, false),
     UT(0x5554, 12, ' ', StringValueType.TEXT, false);
 
-    private static Logger LOG = LoggerFactory.getLogger(VR.class);
+    protected static Logger LOG = LoggerFactory.getLogger(VR.class);
 
     protected final int code;
     protected final int headerLength;
@@ -96,12 +96,12 @@ public enum VR {
         this.inlineBinary = inlineBinary;
     }
 
-    private static int indexOf(int code) {
+    protected static int indexOf(int code) {
         int code1 = code - 0x4141;
         return (code1 & 0xffffe0e0) == 0 ? ((code1 & 0xff00) >> 3) + (code1 & 0xff) : -1;
     }
 
-    private static final VR[] VALUE_OF = new VR[indexOf(UT.code)+1];
+    protected static final VR[] VALUE_OF = new VR[indexOf(UT.code)+1];
     static {
         for (VR vr : VR.values())
             VALUE_OF[indexOf(vr.code)] = vr;

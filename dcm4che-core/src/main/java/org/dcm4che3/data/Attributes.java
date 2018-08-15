@@ -70,31 +70,31 @@ public class Attributes implements Serializable {
                 throws Exception;
     }
 
-    private static final Logger LOG = 
+    protected static final Logger LOG = 
             LoggerFactory.getLogger(Attributes.class);
 
-    private static final int INIT_CAPACITY = 16;
-    private static final int TO_STRING_LIMIT = 50;
-    private static final int TO_STRING_WIDTH = 78;
-    private transient Attributes parent;
-    private transient String parentSequencePrivateCreator;
-    private transient int parentSequenceTag;
-    private transient int[] tags;
-    private transient VR[] vrs;
-    private transient Object[] values;
-    private transient int size;
-    private transient SpecificCharacterSet cs;
-    private transient TimeZone tz;
-    private transient int length = -1;
-    private transient int[] groupLengths;
-    private transient int groupLengthIndex0;
+    protected static final int INIT_CAPACITY = 16;
+    protected static final int TO_STRING_LIMIT = 50;
+    protected static final int TO_STRING_WIDTH = 78;
+    protected transient Attributes parent;
+    protected transient String parentSequencePrivateCreator;
+    protected transient int parentSequenceTag;
+    protected transient int[] tags;
+    protected transient VR[] vrs;
+    protected transient Object[] values;
+    protected transient int size;
+    protected transient SpecificCharacterSet cs;
+    protected transient TimeZone tz;
+    protected transient int length = -1;
+    protected transient int[] groupLengths;
+    protected transient int groupLengthIndex0;
 
-    private final boolean bigEndian;
-    private long itemPosition = -1;
-    private boolean containsSpecificCharacterSet;
-    private boolean containsTimezoneOffsetFromUTC;
-    private Map<String, Object> properties;
-    private TimeZone defaultTimeZone;
+    protected final boolean bigEndian;
+    protected long itemPosition = -1;
+    protected boolean containsSpecificCharacterSet;
+    protected boolean containsTimezoneOffsetFromUTC;
+    protected Map<String, Object> properties;
+    protected TimeZone defaultTimeZone;
 
     public Attributes() {
         this(false, INIT_CAPACITY);
@@ -120,7 +120,7 @@ public class Attributes implements Serializable {
         Arrays.fill(values, null);
     }
 
-    private void init(int initialCapacity) {
+    protected void init(int initialCapacity) {
         this.tags = new int[initialCapacity];
         this.vrs = new VR[initialCapacity];
         this.values = new Object[initialCapacity];
@@ -181,7 +181,7 @@ public class Attributes implements Serializable {
         return properties != null ? properties.remove(key) : null;
     }
 
-    public final boolean isRoot() {
+    public boolean isRoot() {
         return parent == null;
     }
 
@@ -189,15 +189,15 @@ public class Attributes implements Serializable {
         return isRoot() ? this : parent.getRoot();
     }
 
-    public final int getLevel() {
+    public int getLevel() {
         return isRoot() ? 0 : 1 + parent.getLevel();
     }
 
-    public final boolean bigEndian() {
+    public boolean bigEndian() {
         return bigEndian;
     }
 
-    public final Attributes getParent() {
+    public Attributes getParent() {
         return parent;
     }
 
@@ -209,7 +209,7 @@ public class Attributes implements Serializable {
         return parentSequenceTag;
     }
 
-    public final int getLength() {
+    public int getLength() {
         return length;
     }
 
@@ -232,19 +232,19 @@ public class Attributes implements Serializable {
         return this;
     }
 
-    public final long getItemPosition() {
+    public long getItemPosition() {
         return itemPosition;
     }
 
-    public final void setItemPosition(long itemPosition) {
+    public void setItemPosition(long itemPosition) {
         this.itemPosition = itemPosition;
     }
 
-    public final boolean isEmpty() {
+    public boolean isEmpty() {
         return size == 0;
     }
 
-    public final int size() {
+    public int size() {
         return size;
     }
 
@@ -252,7 +252,7 @@ public class Attributes implements Serializable {
         return itemPointers(0);
     }
 
-    private ItemPointer[] itemPointers(int n) {
+    protected ItemPointer[] itemPointers(int n) {
         if (parent == null)
             return new ItemPointer[n];
 
@@ -321,7 +321,7 @@ public class Attributes implements Serializable {
         }
     }
 
-    private void decodeStringValuesUsingSpecificCharacterSet() {
+    protected void decodeStringValuesUsingSpecificCharacterSet() {
         Object value;
         VR vr;
         SpecificCharacterSet cs = getSpecificCharacterSet();
@@ -337,7 +337,7 @@ public class Attributes implements Serializable {
         }
     }
 
-    private void ensureCapacity(int minCapacity) {
+    protected void ensureCapacity(int minCapacity) {
         int oldCapacity = tags.length;
         if (minCapacity > oldCapacity) {
             int newCapacity = Math.max(minCapacity, oldCapacity << 1);
@@ -387,17 +387,17 @@ public class Attributes implements Serializable {
         return item;
     }
 
-    private int indexForInsertOf(int tag) {
+    protected int indexForInsertOf(int tag) {
         return size == 0 ? -1
                 : tags[size-1] < tag ? -(size+1)
                         : indexOf(tag);
     }
 
-    private int indexOf(int tag) {
+    protected int indexOf(int tag) {
         return Arrays.binarySearch(tags, 0, size, tag);
     }
 
-    private int indexOf(String privateCreator, int tag) {
+    protected int indexOf(String privateCreator, int tag) {
         if (privateCreator != null) {
             int creatorTag = creatorTagOf(privateCreator, tag, false);
             if (creatorTag == -1)
@@ -407,7 +407,7 @@ public class Attributes implements Serializable {
         return indexOf(tag);
     }
 
-    private int creatorTagOf(String privateCreator, int tag, boolean reserve) {
+    protected int creatorTagOf(String privateCreator, int tag, boolean reserve) {
         if (!TagUtils.isPrivateGroup(tag))
             throw new IllegalArgumentException(TagUtils.toString(tag)
                     + " is not a private Data Element");
@@ -437,7 +437,7 @@ public class Attributes implements Serializable {
         return creatorTag;
     }
 
-    private Object decodeStringValue(int index) {
+    protected Object decodeStringValue(int index) {
         Object value = values[index];
         if (value instanceof byte[]) {
             value = vrs[index].toStrings((byte[]) value, bigEndian,
@@ -455,7 +455,7 @@ public class Attributes implements Serializable {
                 : SpecificCharacterSet.DEFAULT;
     }
 
-    private double[] decodeDSValue(int index) {
+    protected double[] decodeDSValue(int index) {
         Object value = values[index];
         if (value == Value.NULL)
             return ByteUtils.EMPTY_DOUBLES;
@@ -488,7 +488,7 @@ public class Attributes implements Serializable {
         return ds;
     }
 
-    private int[] decodeISValue(int index) {
+    protected int[] decodeISValue(int index) {
         Object value = values[index];
         if (value == Value.NULL)
             return ByteUtils.EMPTY_INTS;
@@ -521,7 +521,7 @@ public class Attributes implements Serializable {
         return is;
     }
 
-    private void updateVR(int index, VR vr) {
+    protected void updateVR(int index, VR vr) {
         VR prev = vrs[index];
         if (vr == prev)
             return;
@@ -537,7 +537,7 @@ public class Attributes implements Serializable {
         vrs[index] = vr;
     }
 
-    private static boolean isEmpty(Object value) {
+    protected static boolean isEmpty(Object value) {
         return (value instanceof Value) && ((Value) value).isEmpty();
     }
 
@@ -769,7 +769,7 @@ public class Attributes implements Serializable {
         }
     }
 
-    private static String[] toStrings(Object val) {
+    protected static String[] toStrings(Object val) {
         return (val instanceof String) 
                 ? new String[] { (String) val } 
                 : (String[]) val;
@@ -1348,7 +1348,7 @@ public class Attributes implements Serializable {
         }
     }
 
-    private DateRange toDateRange(String s, VR vr) {
+    protected DateRange toDateRange(String s, VR vr) {
         String[] range = splitRange(s);
         TimeZone tz = getTimeZone();
         DatePrecision precision = new DatePrecision();
@@ -1359,7 +1359,7 @@ public class Attributes implements Serializable {
         return new DateRange(start, end);
     }
 
-    private static String[] splitRange(String s) {
+    protected static String[] splitRange(String s) {
         String[] range = new String[2];
         int delim = s.indexOf('-');
         if (delim == -1)
@@ -1405,7 +1405,7 @@ public class Attributes implements Serializable {
         }
     }
 
-    private DateRange toDateRange(String da, String tm) {
+    protected DateRange toDateRange(String da, String tm) {
         String[] darange = splitRange(da);
         String[] tmrange = splitRange(tm);
         DatePrecision precision = new DatePrecision();
@@ -1525,7 +1525,7 @@ public class Attributes implements Serializable {
         this.tz = tz;
     }
 
-    private void updateTimezone(TimeZone from, TimeZone to) {
+    protected void updateTimezone(TimeZone from, TimeZone to) {
         if (from.hasSameRules(to))
             return;
 
@@ -1544,7 +1544,7 @@ public class Attributes implements Serializable {
         }
     }
 
-    private void updateTimezone(TimeZone from, TimeZone to, int tmIndex) {
+    protected void updateTimezone(TimeZone from, TimeZone to, int tmIndex) {
         Object tm = decodeStringValue(tmIndex);
         if (tm == Value.NULL)
             return;
@@ -1655,11 +1655,11 @@ public class Attributes implements Serializable {
         }
     }
 
-    private static boolean isRange(String s) {
+    protected static boolean isRange(String s) {
         return s.indexOf('-') >= 0;
     }
 
-    private String updateTimeZoneDT(TimeZone from, TimeZone to, String dt) {
+    protected String updateTimeZoneDT(TimeZone from, TimeZone to, String dt) {
         int dtlen = dt.length();
         if (dtlen > 8) {
             char ch = dt.charAt(dtlen-5);
@@ -1674,7 +1674,7 @@ public class Attributes implements Serializable {
         return dt;
     }
 
-    private String updateTimeZoneTM(TimeZone from, TimeZone to, String tm) {
+    protected String updateTimeZoneTM(TimeZone from, TimeZone to, String tm) {
         try {
             DatePrecision precision = new DatePrecision();
             Date date = DateUtils.parseTM(from, tm, false, precision);
@@ -1823,7 +1823,7 @@ public class Attributes implements Serializable {
         return set(privateCreator, tag, vr, toString(range, vr, getTimeZone()));
     }
 
-    private static String toString(DateRange range, VR vr, TimeZone tz) {
+    protected static String toString(DateRange range, VR vr, TimeZone tz) {
         DatePrecision precision = new DatePrecision();
         String start = range.getStartDate() != null
                 ? (String) vr.toValue(new Date[]{range.getStartDate()}, tz,
@@ -1836,7 +1836,7 @@ public class Attributes implements Serializable {
         return toDateRangeString(start, end);
     }
 
-    private static String toDateRangeString(String start, String end) {
+    protected static String toDateRangeString(String start, String end) {
         return start.equals(end) ? start : (start + '-' + end);
     }
 
@@ -1906,7 +1906,7 @@ public class Attributes implements Serializable {
         return frags;
     }
 
-    private Object set(String privateCreator, int tag, VR vr, Object value) {
+    protected Object set(String privateCreator, int tag, VR vr, Object value) {
         if (vr == null)
             throw new NullPointerException("vr");
 
@@ -1963,7 +1963,7 @@ public class Attributes implements Serializable {
         item.trimToSize();
     }
 
-    private Object set(int tag, VR vr, Object value) {
+    protected Object set(int tag, VR vr, Object value) {
         int index = indexForInsertOf(tag);
         if (index >= 0) {
             Object oldValue = values[index];
@@ -1975,7 +1975,7 @@ public class Attributes implements Serializable {
         return null;
     }
 
-    private void insert(int index, int tag, VR vr, Object value) {
+    protected void insert(int index, int tag, VR vr, Object value) {
         ensureCapacity(size+1);
         int numMoved = size - index;
         if (numMoved > 0) {
@@ -2078,7 +2078,7 @@ public class Attributes implements Serializable {
         return numAdd != 0;
     }
 
-    private void setWithoutBulkData(String privateCreator, int tag, Sequence seq,
+    protected void setWithoutBulkData(String privateCreator, int tag, Sequence seq,
                                     BulkDataDescriptor descriptor) {
         Sequence newSequence = newSequence(privateCreator, tag, seq.size());
         for (Attributes item : seq) {
@@ -2172,7 +2172,7 @@ public class Attributes implements Serializable {
         return add(other, null, selection, fromIndex, toIndex, null, false, false, false, null);
     }
 
-    private boolean add(Attributes other, int[] include, int[] exclude,
+    protected boolean add(Attributes other, int[] include, int[] exclude,
             int fromIndex, int toIndex, Attributes selection, boolean merge,
             boolean update, boolean simulate, Attributes modified) {
         boolean toggleEndian = bigEndian != other.bigEndian;
@@ -2276,7 +2276,7 @@ public class Attributes implements Serializable {
      * @param newAttrs the other Attributes object
      * @param modified Attributes object to collect overwritten non-empty
      *          attributes with original values or <tt>null</tt>
-     * @param includes sorted tag values
+     * @param selection sorted tag values
      * @return <tt>true</tt> if one ore more attribute were added or
      *          overwritten with a different value
      */
@@ -2293,7 +2293,7 @@ public class Attributes implements Serializable {
      * @param newAttrs the other Attributes object
      * @param modified Attributes object to collect overwritten non-empty
      *          attributes with original values or <tt>null</tt>
-     * @param includes sorted tag values
+     * @param selection sorted tag values
      * @return <tt>true</tt> if one ore more attribute would be added or
      *          overwritten with a different value
      */
@@ -2303,7 +2303,7 @@ public class Attributes implements Serializable {
                 false, true, true, modified);
     }
 
-    private static Object toggleEndian(VR vr, Object value, boolean toggleEndian) {
+    protected static Object toggleEndian(VR vr, Object value, boolean toggleEndian) {
         return (toggleEndian && value instanceof byte[])
                 ? vr.toggleEndian((byte[]) value, true)
                 : value;
@@ -2379,14 +2379,14 @@ public class Attributes implements Serializable {
             return both?diffBoth:inAnotInB;
     }
 
-    private Attributes filterOutPrivateCreator(Attributes inAnotInB, Attributes b) {
+    protected Attributes filterOutPrivateCreator(Attributes inAnotInB, Attributes b) {
         for(int tag : b.tags)
             if(!inAnotInB.contains(tag) && TagUtils.isPrivateCreator(tag))
                 b.remove(tag);
         return b;
     }
 
-    private void diffAttr(Attributes b, Object[] otherValues,
+    protected void diffAttr(Attributes b, Object[] otherValues,
             Attributes inAnotInB, int indexOfTag) {
         if(!(b.contains(tags[indexOfTag]) && otherValues[b.indexOf(tags[indexOfTag])].equals(values[indexOfTag]))) {
             //add to diff in a not in b
@@ -2398,7 +2398,7 @@ public class Attributes implements Serializable {
         }
     }
     
-    private boolean equalValues(Attributes other, int index, int otherIndex) {
+    protected boolean equalValues(Attributes other, int index, int otherIndex) {
         VR vr = vrs[index];
         if (vr != other.vrs[otherIndex])
             return false;
@@ -2422,7 +2422,7 @@ public class Attributes implements Serializable {
         return false;
     }
 
-    private boolean equalISValues(Attributes other, int index, int otherIndex) {
+    protected boolean equalISValues(Attributes other, int index, int otherIndex) {
         try {
             return Arrays.equals(decodeISValue(index), other.decodeISValue(otherIndex));
         } catch (NumberFormatException e) {
@@ -2430,7 +2430,7 @@ public class Attributes implements Serializable {
         }
     }
 
-    private boolean equalDSValues(Attributes other, int index, int otherIndex) {
+    protected boolean equalDSValues(Attributes other, int index, int otherIndex) {
         try {
             return Arrays.equals(decodeDSValue(index), other.decodeDSValue(otherIndex));
         } catch (NumberFormatException e) {
@@ -2438,7 +2438,7 @@ public class Attributes implements Serializable {
         }
     }
 
-    private boolean equalStringValues(Attributes other, int index, int otherIndex) {
+    protected boolean equalStringValues(Attributes other, int index, int otherIndex) {
         Object v1 = decodeStringValue(index);
         Object v2 = other.decodeStringValue(otherIndex);
         if (v1 instanceof String[]) {
@@ -2460,7 +2460,7 @@ public class Attributes implements Serializable {
         return h;
     }
 
-    private void set(String privateCreator, int tag, Sequence src,
+    protected void set(String privateCreator, int tag, Sequence src,
             Attributes selection) {
         Sequence dst = newSequence(privateCreator, tag, src.size());
         for (Attributes item : src)
@@ -2469,7 +2469,7 @@ public class Attributes implements Serializable {
                 : new Attributes(item, bigEndian));
     }
 
-    private void set(String privateCreator, int tag, Fragments src) {
+    protected void set(String privateCreator, int tag, Fragments src) {
         boolean toogleEndian = src.bigEndian() != bigEndian;
         VR vr = src.vr();
         Fragments dst = newFragments(privateCreator, tag, vr, src.size());
@@ -2497,7 +2497,7 @@ public class Attributes implements Serializable {
         return sb;
     }
 
-    private int appendAttributes(int limit, int maxWidth, StringBuilder sb, String prefix) {
+    protected int appendAttributes(int limit, int maxWidth, StringBuilder sb, String prefix) {
         int lines = 0;
         int creatorTag = 0;
         String privateCreator = null;
@@ -2524,7 +2524,7 @@ public class Attributes implements Serializable {
         return lines;
     }
 
-    private int appendItems(Sequence sq, int limit, int maxWidth, StringBuilder sb,
+    protected int appendItems(Sequence sq, int limit, int maxWidth, StringBuilder sb,
             String prefix) {
         int lines = 0;
         int itemNo = 0;
@@ -2537,7 +2537,7 @@ public class Attributes implements Serializable {
         return lines ;
     }
 
-    private StringBuilder appendAttribute(String privateCreator, int tag, VR vr, Object value,
+    protected StringBuilder appendAttribute(String privateCreator, int tag, VR vr, Object value,
             int maxLength, StringBuilder sb, String prefix) {
         sb.append(prefix).append(TagUtils.toString(tag)).append(' ').append(vr).append(" [");
         if (vr.prompt(value, bigEndian, getSpecificCharacterSet(vr),
@@ -2562,7 +2562,7 @@ public class Attributes implements Serializable {
         return this.length;
     }
 
-    private int calcLength(DicomEncodingOptions encOpts, boolean explicitVR,
+    protected int calcLength(DicomEncodingOptions encOpts, boolean explicitVR,
             SpecificCharacterSet cs, int[] groupLengths) {
         int len, totlen = 0;
         int groupLengthTag = -1;
@@ -2594,7 +2594,7 @@ public class Attributes implements Serializable {
         return totlen;
     }
 
-    private int countGroups() {
+    protected int countGroups() {
         int groupLengthTag = -1;
         int count = 0;
         for (int i = 0; i < size; i++) {
@@ -2637,7 +2637,7 @@ public class Attributes implements Serializable {
              out.writeHeader(Tag.ItemDelimitationItem, null, 0);
      }
 
-    private int getEncodedItemLength(DicomEncodingOptions encOpts,
+    protected int getEncodedItemLength(DicomEncodingOptions encOpts,
             boolean explicitVR) {
         if (isEmpty())
             return encOpts.undefEmptyItemLength ? -1 : 0;
@@ -2651,7 +2651,7 @@ public class Attributes implements Serializable {
         return length;
     }
 
-    private void writeTo(DicomOutputStream out, SpecificCharacterSet cs,
+    protected void writeTo(DicomOutputStream out, SpecificCharacterSet cs,
             int start, int end, int groupLengthIndex) throws IOException {
         boolean groupLength = groupLengths != null;
         int groupLengthTag = -1;
@@ -2670,7 +2670,7 @@ public class Attributes implements Serializable {
     }
 
     /**
-     * Invokes {@link Visitor.visit} for each attribute in this instance. The
+     * Invokes {@link Visitor#visit} for each attribute in this instance. The
      * operation will be aborted if <code>visitor.visit()</code> returns <code>false</code>.
      * 
      * @param visitor
@@ -2692,7 +2692,7 @@ public class Attributes implements Serializable {
         }
     }
 
-    private boolean accept(Visitor visitor, boolean visitNestedDatasets,
+    protected boolean accept(Visitor visitor, boolean visitNestedDatasets,
             int start, int end) throws Exception {
         for (int i = start; i < end; i++) {
             if (!visitor.visit(this, tags[i], vrs[i], values[i]))
@@ -2721,7 +2721,7 @@ public class Attributes implements Serializable {
     }
 
 
-    private void checkInGroup(int i, int groupLengthTag) {
+    protected void checkInGroup(int i, int groupLengthTag) {
         int tag = tags[i];
         if (TagUtils.groupLengthTagOf(tag) != groupLengthTag)
             throw new IllegalStateException(TagUtils.toString(tag)
@@ -2801,7 +2801,7 @@ public class Attributes implements Serializable {
         return true;
     }
 
-    private boolean matches(String privateCreator, int tag, VR vr,
+    protected boolean matches(String privateCreator, int tag, VR vr,
             boolean ignorePNCase, boolean matchNoValue, String[] keyVals) {
         String[] vals = getStrings(privateCreator, tag, null);
         if (vals == null || vals.length == 0)
@@ -2843,7 +2843,7 @@ public class Attributes implements Serializable {
         return false;
     }
 
-    private boolean matches(String privateCreator, int tag, boolean ignorePNCase, 
+    protected boolean matches(String privateCreator, int tag, boolean ignorePNCase, 
             boolean matchNoValue, Sequence keySeq) {
         int n = keySeq.size();
         if (n > 1)
@@ -2867,9 +2867,9 @@ public class Attributes implements Serializable {
         return false;
     }
 
-    private static final long serialVersionUID = 7868714416968825241L;
+    protected static final long serialVersionUID = 7868714416968825241L;
 
-    private void writeObject(ObjectOutputStream out) throws IOException {
+    protected void writeObject(ObjectOutputStream out) throws IOException {
         out.defaultWriteObject();
         out.writeInt(size);
         @SuppressWarnings("resource")
@@ -2880,7 +2880,7 @@ public class Attributes implements Serializable {
         dout.writeHeader(Tag.ItemDelimitationItem, null, 0);
     }
 
-    private void readObject(ObjectInputStream in)
+    protected void readObject(ObjectInputStream in)
             throws IOException, ClassNotFoundException {
         in.defaultReadObject();
         init(in.readInt());
@@ -2904,7 +2904,7 @@ public class Attributes implements Serializable {
         validate(el, result, null);
     }
 
-    private void validate(DataElement el, ValidationResult result,
+    protected void validate(DataElement el, ValidationResult result,
             Map<String, Boolean> processedConditions) {
         IOD.Condition condition = el.getCondition();
         if (condition != null) {
@@ -3042,7 +3042,7 @@ public class Attributes implements Serializable {
         }
     }
 
-    private IOD[] checkforMissingItems(int[] matchingItems, IOD[] itemIODs) {
+    protected IOD[] checkforMissingItems(int[] matchingItems, IOD[] itemIODs) {
         IOD[] missingItems = new IOD[matchingItems.length];
         int n = 0;
         for (int i = 0; i < matchingItems.length; i++) {
@@ -3054,7 +3054,7 @@ public class Attributes implements Serializable {
         return n > 0 ? Arrays.copyOf(missingItems, n) : null;
     }
 
-    private ValidationResult validateCode(Attributes item, Code[] validVals) {
+    protected ValidationResult validateCode(Attributes item, Code[] validVals) {
         ValidationResult result = null;
         for (Code code : validVals) {
             result = item.validate(IOD.valueOf(code));
@@ -3064,7 +3064,7 @@ public class Attributes implements Serializable {
         return result;
     }
 
-    private boolean isValidValue(String[] val, int valueNumber, String[] validVals) {
+    protected boolean isValidValue(String[] val, int valueNumber, String[] validVals) {
         if (valueNumber != 0)
             return val.length < valueNumber || isOneOf(val[valueNumber-1], validVals);
 
@@ -3074,7 +3074,7 @@ public class Attributes implements Serializable {
         return true;
     }
 
-    private <T> boolean isOneOf(Object val, T[] ss) {
+    protected <T> boolean isOneOf(Object val, T[] ss) {
         if (ss == null)
             return true;
         for (T s : ss)
@@ -3083,7 +3083,7 @@ public class Attributes implements Serializable {
         return false;
     }
 
-    private boolean isValidValue(int[] val, int valueNumber, int[] validVals) {
+    protected boolean isValidValue(int[] val, int valueNumber, int[] validVals) {
         if (valueNumber != 0)
             return val.length < valueNumber || isOneOf(val[valueNumber-1], validVals);
 
@@ -3093,7 +3093,7 @@ public class Attributes implements Serializable {
         return true;
     }
 
-    private boolean isOneOf(int val, int[] is) {
+    protected boolean isOneOf(int val, int[] is) {
         if (is == null)
             return true;
         for (int i : is)

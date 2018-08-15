@@ -61,14 +61,14 @@ public class BulkData implements Value {
 
     public static final int MAGIC_LEN = 0xfbfb;
 
-    public final String uri;
-    public final String uuid;
-    public final boolean bigEndian;
-    private int uriPathEnd;
-    private long offset;
-    private int length = -1;
-    private long[] offsets;
-    private int[] lengths;
+    protected final String uri;
+    protected final String uuid;
+    protected final boolean bigEndian;
+    protected int uriPathEnd;
+    protected long offset;
+    protected int length = -1;
+    protected long[] offsets;
+    protected int[] lengths;
 
     public BulkData(String uuid, String uri, boolean bigEndian) {
         if (uri != null) {
@@ -185,7 +185,7 @@ public class BulkData implements Value {
         return fragments;
     }
 
-    private void parseURI(String uri) {
+    protected void parseURI(String uri) {
         int index = uri.indexOf('?');
         if (index == -1) {
             uriPathEnd = uri.length();
@@ -198,7 +198,7 @@ public class BulkData implements Value {
             parseURIWithOffsets(uri, index+9);
     }
 
-    private void parseURIWithOffset(String uri, int from) {
+    protected void parseURIWithOffset(String uri, int from) {
         int index = uri.indexOf("&length=");
         if (index == -1)
             return;
@@ -209,7 +209,7 @@ public class BulkData implements Value {
         } catch (NumberFormatException e) {}
     }
 
-    private void parseURIWithOffsets(String uri, int from) {
+    protected void parseURIWithOffsets(String uri, int from) {
         int index = uri.indexOf("&lengths=");
         if (index == -1)
             return;
@@ -219,7 +219,7 @@ public class BulkData implements Value {
         } catch (NumberFormatException e) {}
     }
 
-    private static long[] parseLongs(String s) {
+    protected static long[] parseLongs(String s) {
         String[] ss = StringUtils.split(s, ',');
         long[] longs = new long[ss.length];
         for (int i = 0; i < ss.length; i++) {
@@ -228,7 +228,7 @@ public class BulkData implements Value {
         return longs;
     }
 
-    private static int[] parseInts(String s) {
+    protected static int[] parseInts(String s) {
         String[] ss = StringUtils.split(s, ',');
         int[] ints = new int[ss.length];
         for (int i = 0; i < ss.length; i++) {
@@ -237,7 +237,7 @@ public class BulkData implements Value {
         return ints;
     }
 
-    private String appendQuery(String uri, long[] offsets, int[] lengths) {
+    protected String appendQuery(String uri, long[] offsets, int[] lengths) {
         StringBuilder sb = new StringBuilder(uri);
         sb.append( "?offsets=");
         for (long offset : offsets)
@@ -370,5 +370,15 @@ public class BulkData implements Value {
             ois.readBoolean());
     }
 
+    public String getUri() {
+        return uri;
+    }
 
+    public String getUuid() {
+        return uuid;
+    }
+
+    public boolean bigEndian() {
+        return bigEndian;
+    }
 }

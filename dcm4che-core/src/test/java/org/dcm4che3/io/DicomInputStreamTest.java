@@ -48,7 +48,7 @@ public class DicomInputStreamTest {
         assertEquals(3, item.size());
         assertEquals(Tag.PixelData, item.getInt(Tag.SelectorAttribute, 0));
         assertEquals("OW", item.getString(Tag.SelectorAttributeVR));
-        assertEquals(((BulkData) pixelData).uri, item.getString(Tag.RetrieveURL));
+        assertEquals(((BulkData) pixelData).getUri(), item.getString(Tag.RetrieveURL));
     }
 
     private static Attributes readFromResource(String name, 
