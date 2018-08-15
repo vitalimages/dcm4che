@@ -41,12 +41,13 @@ package org.dcm4che3.data;
 import java.util.Date;
 import java.util.TimeZone;
 
+import org.dcm4che3.plugins.Dcm4che3StringCodecService;
 import org.dcm4che3.util.StringUtils;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  */
-enum StringValueType implements ValueType {
+public enum StringValueType implements ValueType {
     ASCII(false, true, null, null),
     STRING(true, true, "\\", null),
     TEXT(true, false, "\n\f\r", null),
@@ -294,19 +295,19 @@ enum StringValueType implements ValueType {
         if (val instanceof byte[])
             return (byte[]) val;
 
-        if (val instanceof String)
-            return cs(cs).encode((String) val, delimiters);
+        if (val instanceof String) {
+            return Dcm4che3StringCodecService.encode(cs(cs), this, (String)val);
+        }
 
-        if (val instanceof String[])
-            return cs(cs).encode(
-                    StringUtils.concat((String[]) val, '\\'), delimiters);
+        if (val instanceof String[]) {
+            return Dcm4che3StringCodecService.encode(cs(cs), this, StringUtils.concat((String[])val, '\\'));
+        }
 
         throw new UnsupportedOperationException();
     } 
 
     @Override
-    public String toString(Object val, boolean bigEndian, int valueIndex,
-            String defVal) {
+    public String toString(Object val, boolean bigEndian, int valueIndex, String defVal) {
 
         if (val instanceof String)
             return (String) (valueIndex == 0 ? val : defVal);
@@ -322,12 +323,11 @@ enum StringValueType implements ValueType {
     } 
 
     @Override
-    public Object toStrings(Object val, boolean bigEndian,
-            SpecificCharacterSet cs) {
+    public Object toStrings(Object val, boolean bigEndian, SpecificCharacterSet cs) {
 
         if (val instanceof byte[]) {
-            String s = cs(cs).decode((byte[]) val);
-            return multipleValues ? StringUtils.splitAndTrim(s, '\\') : StringUtils.trimTrailing(s);
+            String decoded = Dcm4che3StringCodecService.decode(cs, this, (byte[])val);
+            return multipleValues ? StringUtils.splitAndTrim(decoded, '\\') : StringUtils.trimTrailing(decoded);
         }
 
         if (val instanceof String
@@ -477,8 +477,9 @@ enum StringValueType implements ValueType {
     @Override
     public boolean prompt(Object val, boolean bigEndian,
             SpecificCharacterSet cs, int maxChars, StringBuilder sb) {
-        if (val instanceof byte[])
-            return prompt(cs(cs).decode((byte[]) val), maxChars, sb);
+        if (val instanceof byte[]) {
+            return prompt(Dcm4che3StringCodecService.decode(cs, this, (byte[])val), maxChars, sb);
+        }
 
         if (val instanceof String)
             return prompt((String) val, maxChars, sb);
@@ -526,5 +527,9 @@ enum StringValueType implements ValueType {
         }
 
         throw new UnsupportedOperationException();
+    }
+
+    public String getDelimiter() {
+        return delimiters;
     }
 }

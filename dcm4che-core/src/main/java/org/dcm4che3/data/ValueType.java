@@ -44,7 +44,7 @@ import java.util.TimeZone;
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  */
-interface ValueType {
+public interface ValueType {
 
     boolean isStringValue();
 

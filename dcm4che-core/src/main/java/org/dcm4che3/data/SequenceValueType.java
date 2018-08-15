@@ -44,7 +44,7 @@ import java.util.TimeZone;
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  */
-enum SequenceValueType implements ValueType {
+public enum SequenceValueType implements ValueType {
     SQ;
 
     @Override

@@ -246,4 +246,8 @@ public enum VR {
     public static class Holder {
         public VR vr;
     }
+
+    public ValueType getValueType() {
+        return valueType;
+    }
 }

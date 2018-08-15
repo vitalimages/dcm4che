@@ -48,7 +48,7 @@ import org.dcm4che3.util.TagUtils;
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  */
-enum BinaryValueType implements ValueType {
+public enum BinaryValueType implements ValueType {
     BYTE(1, 1) {
 
         @Override
