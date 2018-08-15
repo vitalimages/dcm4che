@@ -41,7 +41,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.dcm4che</groupId>
   <artifactId>dcm4che-parent</artifactId>
-  <version>3.3.7</version>
+  <version>3.3.7.1-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>dcm4che DICOM toolkit and utilities</name>
   <description>dcm4che DICOM toolkit and utilities</description>
@@ -156,6 +156,18 @@
     <module>dcm4che-js-dict</module>
   </modules>
   <distributionManagement>
+    <repository>
+      <id>maven.karoshealth.com</id>
+      <name>Karos Health Private Repository</name>
+      <url>https://maven.karoshealth.com:9001/nexus/content/repositories/releases/</url>
+      <uniqueVersion>false</uniqueVersion>
+    </repository>
+    <snapshotRepository>
+      <id>maven.karoshealth.com</id>
+      <name>Karos Health Private Snapshots Repository</name>
+      <url>https://maven.karoshealth.com:9001/nexus/content/repositories/snapshots/</url>
+      <uniqueVersion>false</uniqueVersion>
+    </snapshotRepository>
   </distributionManagement>
   <repositories>
     <repository>
