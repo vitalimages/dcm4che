@@ -1438,16 +1438,12 @@ public class Attributes implements Serializable {
     public SpecificCharacterSet getSpecificCharacterSet() {
         if (cs != null)
             return cs;
-
-        if (containsSpecificCharacterSet)
-            cs = SpecificCharacterSet.valueOf(
-                    getStrings(null, Tag.SpecificCharacterSet, VR.CS));
+        else if (containsSpecificCharacterSet)
+            return cs = SpecificCharacterSet.valueOf(getStrings(null, Tag.SpecificCharacterSet, VR.CS));
         else if (parent != null)
             return parent.getSpecificCharacterSet();
         else
-            cs = SpecificCharacterSet.DEFAULT;
-
-        return cs;
+            return SpecificCharacterSet.DEFAULT;
     }
 
     public boolean containsTimezoneOffsetFromUTC() {

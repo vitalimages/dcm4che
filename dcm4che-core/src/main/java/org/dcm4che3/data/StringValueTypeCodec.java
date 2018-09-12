@@ -1,16 +1,13 @@
 /**
  * Copyright Karos Health Incorporated 2018
  */
-package org.dcm4che3.plugins.spi;
-
-import org.dcm4che3.data.SpecificCharacterSet;
-import org.dcm4che3.data.StringValueType;
+package org.dcm4che3.data;
 
 /**
  * @author Mike McFarland
  * @since Aug 15, 2018
  */
-public interface Dcm4che3StringCodec {
+public interface StringValueTypeCodec {
 
     String decode(SpecificCharacterSet scs, StringValueType svt, byte[] value);
 

@@ -85,23 +85,57 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
+import java.util.ServiceLoader;
 import java.util.StringTokenizer;
 
 /**
  * @author Gunter Zeilinger <gunterze@gmail.com>
  */
 public class SpecificCharacterSet {
-    
-    public static final SpecificCharacterSet DEFAULT =
+
+    private static ThreadLocal<SoftReference<Encoder>> cachedEncoder1 = new ThreadLocal<SoftReference<Encoder>>();
+    private static ThreadLocal<SoftReference<Encoder>> cachedEncoder2 = new ThreadLocal<SoftReference<Encoder>>();
+
+    public static volatile SpecificCharacterSet DEFAULT =
             new SpecificCharacterSet(new Codec[]{Codec.ISO_646}, "ISO_IR 100");
 
-    private static ThreadLocal<SoftReference<Encoder>> cachedEncoder1 = 
-            new ThreadLocal<SoftReference<Encoder>>();
+    public static volatile StringValueTypeCodec CODEC = new StringValueTypeCodec() {
 
-    private static ThreadLocal<SoftReference<Encoder>> cachedEncoder2 = 
-            new ThreadLocal<SoftReference<Encoder>>();
+        @Override
+        public String decode(SpecificCharacterSet scs, StringValueType svt, byte[] value) {
+            return scs.decode(value);
+        }
+
+        @Override
+        public byte[] encode(SpecificCharacterSet scs, StringValueType svt, String value) {
+            return scs.encode(value, svt.getDelimiter());
+        }
+    };
+
+    protected static final ServiceLoader<StringValueTypeCodec> loader =
+            ServiceLoader.load(StringValueTypeCodec.class);
+
+    static {
+
+        Iterator<StringValueTypeCodec> codecs = loader.iterator();
+        if (codecs.hasNext()) { // assume there's only one plugin.
+            SpecificCharacterSet.CODEC = codecs.next();
+        }
+    }
+
+    public static SpecificCharacterSet setDefaultCharacterSet(SpecificCharacterSet newScs) {
+        SpecificCharacterSet oldScs = SpecificCharacterSet.DEFAULT;
+        SpecificCharacterSet.DEFAULT = newScs;
+        return oldScs;
+    }
+
+    public static StringValueTypeCodec setStringValueTypeCodec(StringValueTypeCodec newCodec) {
+        StringValueTypeCodec oldCodec = SpecificCharacterSet.CODEC;
+        SpecificCharacterSet.CODEC = newCodec;
+        return oldCodec;
+    }
 
     protected final Codec[] codecs;
     protected final String[] dicomCodes;
