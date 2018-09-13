@@ -116,4 +116,24 @@ public class PatchJPEGLSImageOutputStream extends ImageOutputStreamImpl {
     public int read(byte[] b, int off, int len) throws IOException {
 	return ios.read (b, off, len);
     }
+
+    @Override
+    public void flush() throws IOException {
+        if (jpegheader != null) {
+            if (jpegheaderIndex > 0) {
+                JPEGLSCodingParam param = patchJpegLS.createJPEGLSCodingParam(jpegheader);
+                if (param == null) {
+                    ios.write(jpegheader, 0, jpegheaderIndex);
+                } else {
+                    LOG.debug("Patch JPEG-LS with {}", param);
+                    int offset = param.getOffset();
+                    ios.write(jpegheader, 0, offset);
+                    ios.write(param.getBytes());
+                    ios.write(jpegheader, offset, jpegheaderIndex - offset);
+                }
+                jpegheader = null;
+            }
+        }
+        super.flush();
+    }
 }
