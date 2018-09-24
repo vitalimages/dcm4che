@@ -84,6 +84,7 @@ public class ApplicationEntity implements Serializable {
     private String[] applicationClusters = {};
     private String[] prefCalledAETs = {};
     private String[] prefCallingAETs = {};
+    private String[] prefTransferSyntaxes = {};
     private String[] supportedCharacterSets = {};
     private boolean acceptor = true;
     private boolean initiator = true;
@@ -240,6 +241,15 @@ public class ApplicationEntity implements Serializable {
         prefCallingAETs = aets;
     }
 
+    public String[] getPreferredTransferSyntaxes() {
+        return prefTransferSyntaxes;
+    }
+
+    public void setPreferredTransferSyntaxes(String... transferSyntaxes) {
+        this.prefTransferSyntaxes =
+                StringUtils.requireContainsNoEmpty(transferSyntaxes, "empty transferSyntax");
+    }
+
     public String[] getAcceptedCallingAETitles() {
         return acceptedCallingAETs.toArray(
                 new String[acceptedCallingAETs.size()]);
@@ -277,6 +287,7 @@ public class ApplicationEntity implements Serializable {
             aets[i] = entry.getKey().equals("*")
                     ? entry.getValue()
                     : '[' + entry.getKey() + ']' + entry.getValue();
+            i++;
         }
         return aets;
     }
@@ -514,18 +525,17 @@ public class ApplicationEntity implements Serializable {
                    PresentationContext.ABSTRACT_SYNTAX_NOT_SUPPORTED,
                    rqpc.getTransferSyntax());
 
-       for (String ts : rqpc.getTransferSyntaxes())
-           if (tc.containsTransferSyntax(ts)) {
-               byte[] info = negotiate(rq.getExtNegotiationFor(as), tc);
-               if (info != null)
-                   ac.addExtendedNegotiation(new ExtendedNegotiation(as, info));
-               return new PresentationContext(pcid,
-                       PresentationContext.ACCEPTANCE, ts);
-           }
+       String ts = tc.selectTransferSyntax(rqpc.getTransferSyntaxes());
+       if (ts == null)
+           return new PresentationContext(pcid,
+                   PresentationContext.TRANSFER_SYNTAX_NOT_SUPPORTED,
+                   rqpc.getTransferSyntax());
 
+       byte[] info = negotiate(rq.getExtNegotiationFor(as), tc);
+       if (info != null)
+           ac.addExtendedNegotiation(new ExtendedNegotiation(as, info));
        return new PresentationContext(pcid,
-                PresentationContext.TRANSFER_SYNTAX_NOT_SUPPORTED,
-                rqpc.getTransferSyntax());
+               PresentationContext.ACCEPTANCE, ts);
     }
 
     private TransferCapability roleSelection(AAssociateRQ rq,
@@ -597,26 +607,29 @@ public class ApplicationEntity implements Serializable {
         rq.setMaxOpsPerformed(local.getMaxOpsPerformed());
         rq.setMaxPDULength(local.getReceivePDULength());
         Socket sock = local.connect(remote);
+        AssociationMonitor monitor = device.getAssociationMonitor();
+        Association as = null;
         try {
-            Association as = new Association(this, local, sock);
+            as = new Association(this, local, sock);
             as.write(rq);
             as.waitForLeaving(State.Sta5);
+            if (monitor != null)
+                monitor.onAssociationEstablished(as);
             return as;
-        } catch (InterruptedException e) {
+        } catch (InterruptedException | IOException e) {
             SafeClose.close(sock);
-            throw e;
-        } catch (IOException e) {
-            SafeClose.close(sock);
+            if (as != null && monitor != null)
+                monitor.onAssociationFailed(as, e);
             throw e;
         }
     }
 
     public Association connect(Connection remote, AAssociateRQ rq)
             throws IOException, InterruptedException, IncompatibleConnectionException, GeneralSecurityException {
-        return connect(findCompatibelConnection(remote), remote, rq);
+        return connect(findCompatibleConnection(remote), remote, rq);
     }
 
-    public Connection findCompatibelConnection(Connection remoteConn)
+    public Connection findCompatibleConnection(Connection remoteConn)
             throws IncompatibleConnectionException {
         for (Connection conn : conns)
             if (conn.isInstalled() && conn.isCompatible(remoteConn))
@@ -625,7 +638,7 @@ public class ApplicationEntity implements Serializable {
                 "No compatible connection to " + remoteConn + " available on " + aet);
     }
 
-    public CompatibleConnection findCompatibelConnection(ApplicationEntity remote)
+    public CompatibleConnection findCompatibleConnection(ApplicationEntity remote)
             throws IncompatibleConnectionException {
         for (Connection remoteConn : remote.conns)
             if (remoteConn.isInstalled() && remoteConn.isServer())
@@ -638,7 +651,7 @@ public class ApplicationEntity implements Serializable {
 
     public Association connect(ApplicationEntity remote, AAssociateRQ rq)
         throws IOException, InterruptedException, IncompatibleConnectionException, GeneralSecurityException {
-        CompatibleConnection cc = findCompatibelConnection(remote);
+        CompatibleConnection cc = findCompatibleConnection(remote);
         if (rq.getCalledAET() == null)
             rq.setCalledAET(remote.getAETitle());
         return connect(cc.getLocalConnection(), cc.getRemoteConnection(), rq);
@@ -710,6 +723,7 @@ public class ApplicationEntity implements Serializable {
         masqueradeCallingAETs.clear();
         masqueradeCallingAETs.putAll(from.masqueradeCallingAETs);
         supportedCharacterSets = from.supportedCharacterSets;
+        prefTransferSyntaxes = from.prefTransferSyntaxes;
         hl7ApplicationName = from.hl7ApplicationName;
         acceptor = from.acceptor;
         initiator = from.initiator;
