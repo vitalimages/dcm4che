@@ -387,7 +387,7 @@ public class JSONReader {
             double[] ds = new double[values.size()];
             for (int i = 0; i < ds.length; i++) {
                 Object value = values.get(i);
-                if (Value instanceof String) {
+                if (value instanceof String) {
                     ds[i] = Double.parseDouble((String) value);
                 } else {
                     ds[i] = ((Number) value).doubleValue();
