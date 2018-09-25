@@ -43,7 +43,7 @@
   <artifactId>dcm4che-parent</artifactId>
   <packaging>pom</packaging>
   <name>dcm4che DICOM toolkit and utilities</name>
-  <version>5.14.1</version>
+  <version>5.14.1.1-SNAPSHOT</version>
   <description>dcm4che DICOM toolkit and utilities</description>
   <issueManagement>
     <system>JIRA</system>
@@ -125,7 +125,7 @@
     <module>dcm4che-hl7</module>
     <module>dcm4che-image</module>
     <module>dcm4che-imageio</module>
-    <module>dcm4che-imageio-opencv</module>
+    <!--module>dcm4che-imageio-opencv</module-->
     <module>dcm4che-imageio-rle</module>
     <module>dcm4che-json</module>
     <module>dcm4che-js-dict</module>
@@ -139,11 +139,23 @@
     <module>dcm4che-xdsi</module>
     <module>dcm4che-tool</module>
     <module>dcm4che-assembly</module>
-    <module>dcm4che-jboss-modules</module>
+    <!--module>dcm4che-jboss-modules</module-->
     <module>dcm4che-camel</module>
     <module>dcm4che-test-data</module>
   </modules>
   <distributionManagement>
+    <repository>
+      <id>maven.karoshealth.com</id>
+      <name>Karos Health Private Repository</name>
+      <url>https://maven.karoshealth.com:9001/nexus/content/repositories/releases/</url>
+      <uniqueVersion>false</uniqueVersion>
+    </repository>
+    <snapshotRepository>
+      <id>maven.karoshealth.com</id>
+      <name>Karos Health Private Snapshots Repository</name>
+      <url>https://maven.karoshealth.com:9001/nexus/content/repositories/snapshots/</url>
+      <uniqueVersion>false</uniqueVersion>
+    </snapshotRepository>
   </distributionManagement>
   <repositories>
     <repository>

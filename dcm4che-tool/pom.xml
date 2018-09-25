@@ -42,7 +42,7 @@
   <parent>
     <artifactId>dcm4che-parent</artifactId>
     <groupId>org.dcm4che</groupId>
-    <version>5.14.1</version>
+    <version>5.14.1.1-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.dcm4che.tool</groupId>
@@ -52,8 +52,8 @@
   <description>DICOM utilities</description>
   <modules>
     <module>dcm4che-tool-common</module>
-    <module>dcm4che-tool-dcm2dcm</module>
-    <module>dcm4che-tool-dcm2jpg</module>
+    <!--module>dcm4che-tool-dcm2dcm</module-->
+    <!--module>dcm4che-tool-dcm2jpg</module-->
     <module>dcm4che-tool-dcm2json</module>
     <module>dcm4che-tool-dcm2xml</module>
     <module>dcm4che-tool-dcmdump</module>
