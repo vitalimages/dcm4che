@@ -386,7 +386,12 @@ public class JSONReader {
         double[] toDoubles() {
             double[] ds = new double[values.size()];
             for (int i = 0; i < ds.length; i++) {
-                ds[i] = ((Number) values.get(i)).doubleValue();
+                Object value = values.get(i);
+                if (Value instanceof String) {
+                    ds[i] = Double.parseDouble((String) value);
+                } else {
+                    ds[i] = ((Number) value).doubleValue();
+                }
             }
             return ds;
         }
@@ -394,7 +399,12 @@ public class JSONReader {
         int[] toInts() {
             int[] is = new int[values.size()];
             for (int i = 0; i < is.length; i++) {
-                is[i] = ((Number) values.get(i)).intValue();
+                Object value = values.get(i);
+                if (value instanceof String) {
+                    is[i] = Integer.parseInt((String) value);
+                } else {
+                    is[i] = ((Number) value).intValue();
+                }
             }
             return is;
         }
