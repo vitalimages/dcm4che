@@ -44,6 +44,8 @@ import java.io.FileDescriptor;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.ResourceBundle;
 
@@ -237,31 +239,52 @@ public class Xml2Dcm {
             main.setNoFileMetaInformation(cl.hasOption("F"));
             main.setEncodingOptions(CLIUtils.encodingOptionsOf(cl));
             try {
-                if (cl.hasOption("i")) {
-                    String fname = cl.getOptionValue("i");
-                    if (fname.equals("-")) {
-                        main.parse(new DicomInputStream(System.in));
-                    } else {
-                        DicomInputStream dis = 
-                                new DicomInputStream(new File(fname));
-                        try {
+
+                if (cl.hasOption("i") && cl.hasOption("x") &&
+                        new File(cl.getOptionValue("i")).isDirectory() &&
+                        new File(cl.getOptionValue("x")).isDirectory()) {
+
+                    final File output = new File(cl.getOptionValue("x"));
+                    for (File source : new File(cl.getOptionValue("i")).listFiles()) {
+                        File target = Files.createFile(output.toPath().resolve(source.getName())).toFile();
+                        try (FileOutputStream fos = new FileOutputStream(target);
+                             BufferedOutputStream bos = new BufferedOutputStream(fos);
+                             DicomInputStream dis = new DicomInputStream(source)) {
+
                             main.parse(dis);
-                        } finally {
-                            dis.close();
+
+                            if (cl.hasOption("x")) {
+                                main.mergeXML(cl.getOptionValue("x"));
+                            }
+
+                            main.writeTo(bos);
                         }
                     }
-                }
 
-                if (cl.hasOption("x"))
-                    main.mergeXML(cl.getOptionValue("x"));
+                } else {
 
-                OutputStream out = cl.hasOption("o") 
-                        ? new FileOutputStream(cl.getOptionValue("o"))
-                        : new FileOutputStream(FileDescriptor.out);
-                try {
-                    main.writeTo(out);
-                } finally {
-                    out.close();
+                    if (cl.hasOption("i")) {
+                        String fname = cl.getOptionValue("i");
+                        if (fname.equals("-")) {
+                            try (DicomInputStream dis = new DicomInputStream(System.in)) {
+                                main.parse(dis);
+                            }
+                        } else {
+                            try (DicomInputStream dis = new DicomInputStream(new File(fname))) {
+                                main.parse(dis);
+                            }
+                        }
+
+                        if (cl.hasOption("x")) {
+                            main.mergeXML(cl.getOptionValue("x"));
+                        }
+
+                        try (OutputStream out = cl.hasOption("o")
+                                ? new FileOutputStream(cl.getOptionValue("o"))
+                                : new FileOutputStream(FileDescriptor.out)) {
+                            main.writeTo(out);
+                        }
+                    }
                 }
             } finally {
                 if (!cl.hasOption("keep-blk-files"))
