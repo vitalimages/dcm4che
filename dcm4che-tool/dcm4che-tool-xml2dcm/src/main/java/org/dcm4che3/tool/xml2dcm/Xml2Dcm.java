@@ -240,24 +240,22 @@ public class Xml2Dcm {
             main.setEncodingOptions(CLIUtils.encodingOptionsOf(cl));
             try {
 
-                if (cl.hasOption("i") && cl.hasOption("x") &&
-                        new File(cl.getOptionValue("i")).isDirectory() &&
-                        new File(cl.getOptionValue("x")).isDirectory()) {
+                if (cl.hasOption("x") && cl.hasOption("o") &&
+                        new File(cl.getOptionValue("x")).isDirectory() &&
+                        new File(cl.getOptionValue("o")).isDirectory()) {
 
-                    final File output = new File(cl.getOptionValue("x"));
-                    for (File source : new File(cl.getOptionValue("i")).listFiles()) {
+                    final File output = new File(cl.getOptionValue("o"));
+                    for (File source : new File(cl.getOptionValue("x")).listFiles()) {
                         File target = Files.createFile(output.toPath().resolve(source.getName())).toFile();
                         try (FileOutputStream fos = new FileOutputStream(target);
-                             BufferedOutputStream bos = new BufferedOutputStream(fos);
-                             DicomInputStream dis = new DicomInputStream(source)) {
+                             BufferedOutputStream bos = new BufferedOutputStream(fos)) {
 
-                            main.parse(dis);
-
-                            if (cl.hasOption("x")) {
-                                main.mergeXML(cl.getOptionValue("x"));
-                            }
+                            main.mergeXML(source.getAbsolutePath());
 
                             main.writeTo(bos);
+
+                            main.dataset = null;
+                            main.fmi = null;
                         }
                     }
 
