@@ -38,10 +38,10 @@
 
 package org.dcm4che3.tool.dcm2xml;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.ResourceBundle;
 
@@ -197,28 +197,60 @@ public class Dcm2Xml {
                 .build());
     }
 
+    @SuppressWarnings("static-access")
+    private static void addIOFileNameOptions(Options opts) {
+        opts.addOption(Option.builder("i")
+                .hasArg()
+                .argName("dicom-file")
+                .desc(rb.getString("i-file"))
+                .build());
+        opts.addOption(Option.builder("o")
+                .hasArg()
+                .argName("dicom-file")
+                .desc(rb.getString("o-file"))
+                .build());
+    }
+
     @SuppressWarnings("unchecked")
     public static void main(String[] args) {
         try {
-            CommandLine cl = parseComandLine(args);
+
+            Options opts = new Options();
+            addIOFileNameOptions(opts);
+            CommandLine cl = CLIUtils.parseComandLine(args, opts, rb, Dcm2Xml.class);
+
             Dcm2Xml main = new Dcm2Xml();
-            if (cl.hasOption("x"))
+            if (cl.hasOption("x")) {
                 main.setXSLTURL(toURL(cl.getOptionValue("x")));
+            }
             main.setIndent(cl.hasOption("I"));
             main.setIncludeKeyword(!cl.hasOption("K"));
             main.setIncludeNamespaceDeclaration(cl.hasOption("xmlns")); if (cl.hasOption("xml11"))
                 main.setXMLVersion(XML_1_1);
             configureBulkdata(main, cl);
-            String fname = fname(cl.getArgList());
-            if (fname.equals("-")) {
-                main.parse(new DicomInputStream(System.in));
+
+            if (cl.hasOption("i") && cl.hasOption("o") &&
+                    new File(cl.getOptionValue("i")).isDirectory() &&
+                    new File(cl.getOptionValue("o")).isDirectory()) {
+
+                final File output = new File(cl.getOptionValue("o"));
+                for (File source : new File(cl.getOptionValue("i")).listFiles()) {
+                    File target = Files.createFile(output.toPath().resolve(source.getName())).toFile();
+                    try (DicomInputStream dis = new DicomInputStream(source);
+                         FileOutputStream fos = new FileOutputStream(target);
+                         BufferedOutputStream bos = new BufferedOutputStream(fos)) {
+                        main.parse(dis, bos);
+                    }
+                }
+
             } else {
-                DicomInputStream dis =
-                        new DicomInputStream(new File(fname));
-                try {
-                    main.parse(dis);
-                } finally {
-                    dis.close();
+                String fname = fname(cl.getArgList());
+                if (fname.equals("-")) {
+                    main.parse(new DicomInputStream(System.in), null);
+                } else {
+                    try (DicomInputStream dis = new DicomInputStream(new File(fname))) {
+                        main.parse(dis, null);
+                    }
                 }
             }
         } catch (ParseException e) {
@@ -286,7 +318,7 @@ public class Dcm2Xml {
         return argList.get(0);
     }
 
-    public void parse(DicomInputStream dis) throws IOException,
+    public void parse(DicomInputStream dis, OutputStream os) throws IOException,
             TransformerConfigurationException {
         dis.setIncludeBulkData(includeBulkData);
         if (blkAttrs != null)
@@ -299,7 +331,7 @@ public class Dcm2Xml {
         Transformer t = th.getTransformer();
         t.setOutputProperty(OutputKeys.INDENT, indent ? "yes" : "no");
         t.setOutputProperty(OutputKeys.VERSION, xmlVersion);
-        th.setResult(new StreamResult(System.out));
+        th.setResult(new StreamResult(os == null ? System.out : os));
         SAXWriter saxWriter = new SAXWriter(th);
         saxWriter.setIncludeKeyword(includeKeyword);
         saxWriter.setIncludeNamespaceDeclaration(includeNamespaceDeclaration);
