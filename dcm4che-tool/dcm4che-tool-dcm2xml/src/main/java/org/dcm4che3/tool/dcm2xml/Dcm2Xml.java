@@ -235,12 +235,26 @@ public class Dcm2Xml {
 
                 final File output = new File(cl.getOptionValue("o"));
                 for (File source : new File(cl.getOptionValue("i")).listFiles()) {
-                    File target = Files.createFile(output.toPath().resolve(source.getName())).toFile();
+
+                    if (source.isDirectory()) continue;
+
+                    File target = Files.createFile(output.toPath().resolve(source.getName()
+                            .replace(".dcm", ".xml")
+                            .replace(".DCM", ".XML")))
+                            .toFile();
+
                     try (DicomInputStream dis = new DicomInputStream(source);
                          FileOutputStream fos = new FileOutputStream(target);
                          BufferedOutputStream bos = new BufferedOutputStream(fos)) {
                         main.parse(dis, bos);
                     }
+                }
+
+            } else if (cl.hasOption("i") && new File(cl.getOptionValue("i")).isFile()) {
+
+                final File source = new File(cl.getOptionValue("i"));
+                try (DicomInputStream dis = new DicomInputStream(source)) {
+                    main.parse(dis, null);
                 }
 
             } else {

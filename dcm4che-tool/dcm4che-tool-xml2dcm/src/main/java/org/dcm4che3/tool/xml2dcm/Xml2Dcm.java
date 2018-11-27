@@ -246,7 +246,14 @@ public class Xml2Dcm {
 
                     final File output = new File(cl.getOptionValue("o"));
                     for (File source : new File(cl.getOptionValue("x")).listFiles()) {
-                        File target = Files.createFile(output.toPath().resolve(source.getName())).toFile();
+
+                        if (source.isDirectory()) continue;
+
+                        File target = Files.createFile(output.toPath().resolve(source.getName()
+                                .replace(".xml", ".dcm")
+                                .replace(".XML", ".DCM")))
+                                .toFile();
+
                         try (FileOutputStream fos = new FileOutputStream(target);
                              BufferedOutputStream bos = new BufferedOutputStream(fos)) {
 
