@@ -279,17 +279,18 @@ public class Xml2Dcm {
                                 main.parse(dis);
                             }
                         }
-
-                        if (cl.hasOption("x")) {
-                            main.mergeXML(cl.getOptionValue("x"));
-                        }
-
-                        try (OutputStream out = cl.hasOption("o")
-                                ? new FileOutputStream(cl.getOptionValue("o"))
-                                : new FileOutputStream(FileDescriptor.out)) {
-                            main.writeTo(out);
-                        }
                     }
+
+                    if (cl.hasOption("x")) {
+                        main.mergeXML(cl.getOptionValue("x"));
+                    }
+
+                    try (OutputStream out = cl.hasOption("o")
+                            ? new FileOutputStream(cl.getOptionValue("o"))
+                            : new FileOutputStream(FileDescriptor.out)) {
+                        main.writeTo(out);
+                    }
+
                 }
             } finally {
                 if (!cl.hasOption("keep-blk-files"))
