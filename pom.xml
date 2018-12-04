@@ -43,7 +43,7 @@
   <artifactId>dcm4che-parent</artifactId>
   <packaging>pom</packaging>
   <name>dcm4che DICOM toolkit and utilities</name>
-  <version>5.14.1</version>
+  <version>5.14.1.1</version>
   <description>dcm4che DICOM toolkit and utilities</description>
   <issueManagement>
     <system>JIRA</system>
@@ -144,6 +144,18 @@
     <module>dcm4che-test-data</module>
   </modules>
   <distributionManagement>
+    <repository>
+      <id>maven.karoshealth.com</id>
+      <name>Karos Health Private Repository</name>
+      <url>https://maven.karoshealth.com:9001/nexus/content/repositories/releases/</url>
+      <uniqueVersion>false</uniqueVersion>
+    </repository>
+    <snapshotRepository>
+      <id>maven.karoshealth.com</id>
+      <name>Karos Health Private Snapshots Repository</name>
+      <url>https://maven.karoshealth.com:9001/nexus/content/repositories/snapshots/</url>
+      <uniqueVersion>false</uniqueVersion>
+    </snapshotRepository>
   </distributionManagement>
   <repositories>
     <repository>
