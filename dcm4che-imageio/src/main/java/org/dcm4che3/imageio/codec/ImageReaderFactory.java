@@ -286,9 +286,14 @@ public class ImageReaderFactory implements Serializable {
 
                         ImageReader reader = readerspi.createReaderInstance();
 
-                        if (param.className == null
-                                || param.className.equals(reader.getClass().getName()))
-                            return reader;
+                        if (StringUtils.equals("jpeg2000", param.getFormatName()) &&
+                    		StringUtils.equals("J2KImageReader", reader.getClass().getSimpleName())) {
+                        	return reader;
+                        }
+                        
+                        if (param.className == null || param.className.equals(reader.getClass().getName())) {
+                    		return reader;
+                        }
                     }
                 } while (iter.hasNext());
             }
