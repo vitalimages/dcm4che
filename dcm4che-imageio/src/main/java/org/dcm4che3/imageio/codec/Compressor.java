@@ -336,7 +336,7 @@ public class Compressor extends Decompressor implements Closeable {
         iis.setByteOrder(pixeldata.bigEndian()
                 ? ByteOrder.BIG_ENDIAN
                 : ByteOrder.LITTLE_ENDIAN);
-        iis.seek(pixeldata.offset() + imageParams.getFrameLength() * frameIndex);
+        iis.seek(pixeldata.offset() + (long)imageParams.getFrameLength() * (long)frameIndex);
         DataBuffer db = bi.getRaster().getDataBuffer();
         switch (db.getDataType()) {
         case DataBuffer.TYPE_BYTE:
