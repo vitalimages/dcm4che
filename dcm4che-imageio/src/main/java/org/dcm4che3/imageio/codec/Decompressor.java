@@ -133,7 +133,7 @@ public class Decompressor {
         this.banded = dataset.getInt(Tag.PlanarConfiguration, 0) != 0;
         this.signed = dataset.getInt(Tag.PixelRepresentation, 0) != 0;
         this.frames = dataset.getInt(Tag.NumberOfFrames, 1);
-        this.frameLength = rows * cols * samples * (bitsAllocated>>>3);
+        this.frameLength = rows * cols * samples * bitsAllocated / 8;
         this.length = frameLength * frames;
         this.imageDescriptor = new ImageDescriptor(dataset);
         
@@ -161,7 +161,9 @@ public class Decompressor {
             LOG.debug("Decompressor: {}", decompressor.getClass().getName());
             this.readParam = decompressor.getDefaultReadParam();
             this.patchJpegLS = param.patchJPEGLS;
-            this.pmiAfterDecompression = param.pmiAfterDecompression(pmi);
+            this.pmiAfterDecompression = pmi.isYBR() && TransferSyntaxType.isYBRCompression(tsuid)
+                    ? PhotometricInterpretation.RGB
+                    : pmi;
         } else {
             this.file = ((BulkData) pixeldata).getFile();
         }

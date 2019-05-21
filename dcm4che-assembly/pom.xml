@@ -42,7 +42,7 @@
   <parent>
     <artifactId>dcm4che-parent</artifactId>
     <groupId>org.dcm4che</groupId>
-    <version>5.14.1.2-SNAPSHOT</version>
+    <version>5.17.0</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>dcm4che-assembly</artifactId>
@@ -54,7 +54,6 @@
     <plugins>
       <plugin>
         <artifactId>maven-remote-resources-plugin</artifactId>
-        <version>1.5</version>
         <executions>
           <execution>
             <goals>
@@ -101,18 +100,31 @@
             </plugin>
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
-        <version>2.3</version>
-        <configuration>
-          <descriptors>
-            <descriptor>src/main/assembly/bin.xml</descriptor>
-          </descriptors>
-        </configuration>
         <executions>
           <execution>
+            <id>zip</id>
             <phase>package</phase>
             <goals>
               <goal>single</goal>
             </goals>
+            <configuration>
+              <descriptors>
+                <descriptor>src/main/assembly/bin.xml</descriptor>
+              </descriptors>
+            </configuration>
+          </execution>
+          <execution>
+            <id>dir</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+            <configuration>
+              <descriptors>
+                <descriptor>src/main/assembly/bin-dir.xml</descriptor>
+              </descriptors>
+              <attach>false</attach>
+            </configuration>
           </execution>
         </executions>
       </plugin>
@@ -268,6 +280,11 @@
     <dependency>
       <groupId>org.dcm4che.tool</groupId>
       <artifactId>dcm4che-tool-dcm2json</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.dcm4che.tool</groupId>
+      <artifactId>dcm4che-tool-dcm2str</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

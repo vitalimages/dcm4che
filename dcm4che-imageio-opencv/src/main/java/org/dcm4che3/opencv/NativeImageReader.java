@@ -222,8 +222,7 @@ public class NativeImageReader extends ImageReader implements Closeable {
         int nBitDepth = params.getBitsPerSample();
         int nScanlineStride = params.getBytesPerLine() / ((nBitDepth + 7) / 8);
 
-        // TODO should handle all types.
-        if (nType < 0 || (nType > 2 && nType != ImageParameters.TYPE_BIT)) {
+        if (nType < 0 || (nType > ImageParameters.TYPE_BIT)) {
             throw new UnsupportedOperationException("Unsupported data type" + " " + nType);
         }
 
@@ -249,16 +248,20 @@ public class NativeImageReader extends ImageReader implements Closeable {
 
     @Override
     public BufferedImage read(int imageIndex, ImageReadParam param) throws IOException {
-        return ImageConversion.toBufferedImage(getNativeImage(param));
+        PlanarImage img = getNativeImage(param);
+        BufferedImage bufferedImage = ImageConversion.toBufferedImage(img);
+        if (img != null) {
+            img.release();
+        }
+        return bufferedImage;
     }
 
     private PlanarImage getNativeImage(ImageReadParam param) throws IOException {
         StreamSegment seg = StreamSegment.getStreamSegment(iis, param);
         ImageDescriptor desc = seg.getImageDescriptor();
 
-        int dcmFlags = (canEncodeSigned && desc.isSigned())
-                ? Imgcodecs.DICOM_IMREAD_SIGNED
-                : Imgcodecs.DICOM_IMREAD_UNSIGNED;
+        int dcmFlags =
+            (canEncodeSigned && desc.isSigned()) ? Imgcodecs.DICOM_IMREAD_SIGNED : Imgcodecs.DICOM_IMREAD_UNSIGNED;
         // Force JPEG Baseline (1.2.840.10008.1.2.4.50) to YBR_FULL_422 color model when RGB (error made by some
         // constructors). RGB color model doesn't make sense for lossy jpeg.
         // http://dicom.nema.org/medical/dicom/current/output/chtml/part05/sect_8.2.html#sect_8.2.1
@@ -268,20 +271,35 @@ public class NativeImageReader extends ImageReader implements Closeable {
         }
 
         if (seg instanceof FileStreamSegment) {
-
-            MatOfDouble positions =
-                new MatOfDouble(ExtendSegmentedInputImageStream.getDoubleArray(seg.getSegPosition()));
-            MatOfDouble lengths = new MatOfDouble(ExtendSegmentedInputImageStream.getDoubleArray(seg.getSegLength()));
-
-            return ImageCV.toImageCV(Imgcodecs.dicomJpgFileRead(((FileStreamSegment) seg).getFilePath(), positions, lengths,
-                dcmFlags, Imgcodecs.IMREAD_UNCHANGED));
+            MatOfDouble positions = null;
+            MatOfDouble lengths = null;
+            try {
+            positions = new MatOfDouble(ExtendSegmentedInputImageStream.getDoubleArray(seg.getSegPosition()));
+            lengths = new MatOfDouble(ExtendSegmentedInputImageStream.getDoubleArray(seg.getSegLength()));
+            return ImageCV.toImageCV(Imgcodecs.dicomJpgFileRead(((FileStreamSegment) seg).getFilePath(), positions,
+                lengths, dcmFlags, Imgcodecs.IMREAD_UNCHANGED));
+            } finally {
+                closeMat(positions);
+                closeMat(lengths);
+            }
         } else if (seg instanceof MemoryStreamSegment) {
-            ByteBuffer b = ((MemoryStreamSegment) seg).getCache();
-            Mat buf = new Mat(1, b.limit(), CvType.CV_8UC1);
-            buf.put(0, 0, b.array());
-            return ImageCV.toImageCV(Imgcodecs.dicomJpgMatRead(buf, dcmFlags, Imgcodecs.IMREAD_UNCHANGED));
+            Mat buf = null;
+            try {
+                ByteBuffer b = ((MemoryStreamSegment) seg).getCache();
+                buf = new Mat(1, b.limit(), CvType.CV_8UC1);
+                buf.put(0, 0, b.array());
+                return ImageCV.toImageCV(Imgcodecs.dicomJpgMatRead(buf, dcmFlags, Imgcodecs.IMREAD_UNCHANGED));
+            } finally {
+                closeMat(buf);
+            }
         }
         return null;
+    }
+    
+    public static void closeMat(Mat mat) {
+        if (mat != null) {
+            mat.release();
+        }
     }
 
     public static SOFSegment getSOFSegment(ImageInputStream iis) throws IOException {
@@ -388,5 +406,4 @@ public class NativeImageReader extends ImageReader implements Closeable {
         }
         return (ch1 << 8) + ch2;
     }
-
 }

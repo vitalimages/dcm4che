@@ -54,7 +54,7 @@ import java.util.List;
  */
 public class WebApplication {
 
-    public enum ServiceClass { WADO_URI, WADO_RS, STOW_RS, QIDO_RS, UPS_RS, DCM4CHEE_ARC }
+    public enum ServiceClass { WADO_URI, WADO_RS, STOW_RS, QIDO_RS, UPS_RS, DCM4CHEE_ARC, DCM4CHEE_ARC_AET }
 
     private Device device;
     private String applicationName;
@@ -62,18 +62,19 @@ public class WebApplication {
     private String servicePath;
     private String aeTitle;
     private String[] applicationClusters = {};
+    private String keycloakClientID;
     private Boolean installed;
     private EnumSet<ServiceClass> serviceClasses = EnumSet.noneOf(ServiceClass.class);
     private final List<Connection> conns = new ArrayList<>(1);
-
-    public final Device getDevice() {
-        return device;
-    }
 
     public WebApplication() {}
 
     public WebApplication(String applicationName) {
         this.applicationName = applicationName;
+    }
+
+    public Device getDevice() {
+        return device;
     }
 
     void setDevice(Device device) {
@@ -117,7 +118,7 @@ public class WebApplication {
     }
 
     public void setServicePath(String servicePath) {
-        this.servicePath = servicePath;
+        this.servicePath = servicePath.startsWith("/") ? servicePath : '/' + servicePath;
     }
 
     public String getAETitle() {
@@ -137,6 +138,14 @@ public class WebApplication {
         this.applicationClusters = applicationClusters;
     }
 
+    public String getKeycloakClientID() {
+        return keycloakClientID;
+    }
+
+    public void setKeycloakClientID(String keycloakClientID) {
+        this.keycloakClientID = keycloakClientID;
+    }
+
     public boolean isInstalled() {
         return device != null && device.isInstalled()
                 && (installed == null || installed.booleanValue());
@@ -153,6 +162,10 @@ public class WebApplication {
         this.installed = installed;
     }
 
+    public KeycloakClient getKeycloakClient() {
+        return keycloakClientID != null ? device.getKeycloakClient(keycloakClientID) : null;
+    }
+
     public void addConnection(Connection conn) {
         if (conn.getProtocol() != Connection.Protocol.HTTP)
             throw new IllegalArgumentException(
@@ -161,6 +174,27 @@ public class WebApplication {
             throw new IllegalStateException(conn + " not contained by " +
                     device.getDeviceName());
         conns.add(conn);
+    }
+
+    public StringBuilder getServiceURL() {
+        return getServiceURL(firstInstalledConnection());
+    }
+
+    private Connection firstInstalledConnection() {
+        for (Connection conn : conns) {
+            if (conn.isInstalled())
+                return conn;
+        }
+        throw new IllegalStateException("No installed Network Connection");
+    }
+
+    public StringBuilder getServiceURL(Connection conn) {
+        return new StringBuilder(64)
+                .append(conn.isTls() ? "https://" : "http://")
+                .append(conn.getHostname())
+                .append(':')
+                .append(conn.getPort())
+                .append(servicePath);
     }
 
     public boolean removeConnection(Connection conn) {
@@ -180,12 +214,17 @@ public class WebApplication {
         this.serviceClasses.addAll(Arrays.asList(serviceClasses));
     }
 
+    public boolean containsServiceClass(ServiceClass serviceClass) {
+        return serviceClasses.contains(serviceClass);
+    }
 
     void reconfigure(WebApplication src) {
         description = src.description;
         servicePath = src.servicePath;
         aeTitle = src.aeTitle;
         applicationClusters = src.applicationClusters;
+        keycloakClientID = src.keycloakClientID;
+        installed = src.installed;
         serviceClasses.clear();
         serviceClasses.addAll(src.serviceClasses);
         device.reconfigureConnections(conns, src.conns);

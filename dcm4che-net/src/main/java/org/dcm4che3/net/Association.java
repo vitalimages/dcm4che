@@ -343,15 +343,16 @@ public class Association {
     void doCloseSocketDelayed() {
         enterState(State.Sta13);
         int delay = conn.getSocketCloseDelay();
-        if (delay > 0)
+        if (delay > 0) {
             device.schedule(new Runnable() {
-    
+
                 @Override
                 public void run() {
                     closeSocket();
                 }
             }, delay, TimeUnit.MILLISECONDS);
-        else
+            LOG.debug("{}: closing {} in {} ms", name, sock, delay);
+        } else
             closeSocket();
     }
 
@@ -366,7 +367,7 @@ public class Association {
     }
 
     void write(AAbort aa) throws IOException  {
-        LOG.info("{} << {}", name, aa);
+        LOG.info("{} << {}", name, aa.toString());
         encoder.write(aa);
         ex = aa;
         closeSocketDelayed();
@@ -468,9 +469,9 @@ public class Association {
         startIdleTimeout();
     }
 
-    private void write(AAssociateRJ e) throws IOException {
-        LOG.info("{} << {}", name, e);
-        encoder.write(e);
+    private void write(AAssociateRJ rj) throws IOException {
+        LOG.info("{} << {}", name, rj.toString());
+        encoder.write(rj);
         closeSocketDelayed();
     }
 
@@ -724,10 +725,7 @@ public class Association {
         rspHandler.onDimseRSP(this, cmd, data);
         if (pending) {
             if (rspHandler.isStopOnPending())
-                startTimeout(msgId, dimse.isRetrieveRQ()
-                                ? conn.getRetrieveTimeout()
-                                : conn.getResponseTimeout(),
-                        true);
+                startTimeout(msgId, conn.getRetrieveTimeout(),true);
         } else {
             incReceivedCount(dimse);
             removeDimseRSPHandler(msgId);
@@ -1224,11 +1222,11 @@ public class Association {
                        DataWriter data, DimseRSPHandler rspHandler, int rspTimeout, boolean stopOnPending)
             throws IOException, InterruptedException {
         stopTimeout();
-        startTimeout(rspHandler.getMessageID(), rspTimeout, stopOnPending);
         checkException();
         rspHandler.setPC(pc);
         addDimseRSPHandler(rspHandler);
         encoder.writeDIMSE(pc, cmd, data);
+        startTimeout(rspHandler.getMessageID(), rspTimeout, stopOnPending);
     }
 
     static int minZeroAsMax(int i1, int i2) {

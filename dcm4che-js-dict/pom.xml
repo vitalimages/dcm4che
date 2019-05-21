@@ -41,7 +41,7 @@
   <parent>
     <groupId>org.dcm4che</groupId>
     <artifactId>dcm4che-parent</artifactId>
-    <version>5.14.1.2-SNAPSHOT</version>
+    <version>5.17.0</version>
   </parent>
   <artifactId>dcm4che-js-dict</artifactId>
   <name>dcm4che-js-dict</name>
@@ -49,7 +49,6 @@
     <plugins>
       <plugin>
         <artifactId>maven-remote-resources-plugin</artifactId>
-        <version>1.5</version>
         <executions>
           <execution>
             <goals>
@@ -68,7 +67,6 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>xml-maven-plugin</artifactId>
-        <version>1.0.1</version>
         <executions>
           <execution>
             <goals>

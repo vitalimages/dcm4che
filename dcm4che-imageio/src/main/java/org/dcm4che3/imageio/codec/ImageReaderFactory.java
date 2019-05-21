@@ -98,12 +98,6 @@ public class ImageReaderFactory implements Serializable {
             return imageReadParams;
         }
 
-        public PhotometricInterpretation pmiAfterDecompression(PhotometricInterpretation pmi) {
-            return pmi.isYBR() && Property.getFrom(imageReadParams, "YBR2RGB", Boolean.FALSE)
-                    ? PhotometricInterpretation.RGB
-                    : pmi;
-        }
-
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
@@ -142,7 +136,7 @@ public class ImageReaderFactory implements Serializable {
         return s == null || s.isEmpty() || s.equals("*") ? null : s;
     }
 
-    private static ImageReaderFactory defaultFactory;
+    private static volatile ImageReaderFactory defaultFactory;
 
     private final TreeMap<String, ImageReaderParam> map = new TreeMap<>();
 

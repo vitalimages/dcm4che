@@ -42,11 +42,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.regex.Pattern;
 
 import org.dcm4che3.data.IOD.DataElement;
@@ -73,7 +69,22 @@ public class Attributes implements Serializable {
         void endItem();
     }
 
-    public enum UpdatePolicy { SUPPLEMENT, MERGE, OVERWRITE, REPLACE }
+    public static abstract class ItemPointerVisitor implements SequenceVisitor {
+        protected final List<ItemPointer> itemPointers = new ArrayList<>(4);
+        @Override
+        public void startItem(int sqTag, int itemIndex) {
+            itemPointers.add(new ItemPointer(sqTag, itemIndex));
+        }
+
+        @Override
+        public void endItem() {
+            itemPointers.remove(itemPointers.size()-1);
+        }
+    }
+
+    public enum UpdatePolicy { SUPPLEMENT, MERGE, OVERWRITE, REPLACE, PRESERVE }
+    public static final String COERCE = "COERCE";
+    public static final String CORRECT = "CORRECT";
 
     private static final Logger LOG = 
             LoggerFactory.getLogger(Attributes.class);
@@ -198,6 +209,10 @@ public class Attributes implements Serializable {
 
     public final Attributes getParent() {
         return parent;
+    }
+
+    public final Attributes getRoot() {
+        return isRoot() ? this : parent.getRoot();
     }
 
     public final int getLength() {
@@ -336,6 +351,10 @@ public class Attributes implements Serializable {
     }
 
     public Attributes getNestedDataset(ItemPointer... itemPointers) {
+        return getNestedDataset(Arrays.asList(itemPointers));
+    }
+
+    public Attributes getNestedDataset(List<ItemPointer> itemPointers) {
         Attributes item = this;
         for (ItemPointer ip : itemPointers) {
             Object value = item.getValue(ip.privateCreator, ip.sequenceTag);
@@ -415,7 +434,7 @@ public class Attributes implements Serializable {
     }
 
     private Object decodeStringValue(int index) {
-        Object value = values[index];
+        Object value = loadBulkData(values[index]);
         if (value instanceof byte[]) {
             value = vrs[index].toStrings((byte[]) value, bigEndian,
                     getSpecificCharacterSet(vrs[index]));
@@ -424,6 +443,21 @@ public class Attributes implements Serializable {
             values[index] = value;
         }
         return value;
+    }
+
+    private Object loadBulkData(int index) {
+        return values[index] = loadBulkData(values[index]);
+    }
+
+    static Object loadBulkData(Object value) {
+        try {
+            return (value instanceof BulkData)
+                    ? ((BulkData) value).toBytes(null, ((BulkData) value).bigEndian())
+                    : value;
+        } catch (Exception e) {
+            LOG.info("Failed to load {}", value);
+            return Value.NULL;
+        }
     }
 
     public SpecificCharacterSet getSpecificCharacterSet(VR vr) {
@@ -806,6 +840,7 @@ public class Attributes implements Serializable {
             updateVR(index, vr);
 
         try {
+            value = loadBulkData(index);
             if (vr == VR.IS)
                 value = decodeISValue(index);
 
@@ -842,6 +877,7 @@ public class Attributes implements Serializable {
             updateVR(index, vr);
 
         try {
+            value = loadBulkData(index);
             if (vr == VR.IS)
                 value = decodeISValue(index);
 
@@ -890,6 +926,7 @@ public class Attributes implements Serializable {
             updateVR(index, vr);
 
         try {
+            value = loadBulkData(index);
             if (vr == VR.DS)
                 value = decodeDSValue(index);
 
@@ -926,6 +963,7 @@ public class Attributes implements Serializable {
             updateVR(index, vr);
 
         try {
+            value = loadBulkData(index);
             if (vr == VR.DS)
                 value = decodeDSValue(index);
 
@@ -974,6 +1012,7 @@ public class Attributes implements Serializable {
             updateVR(index, vr);
 
         try {
+            value = loadBulkData(index);
             if (vr == VR.DS)
                 value = decodeDSValue(index);
 
@@ -1010,6 +1049,7 @@ public class Attributes implements Serializable {
             updateVR(index, vr);
 
         try {
+            value = loadBulkData(index);
             if (vr == VR.DS)
                 value = decodeDSValue(index);
 
@@ -1960,11 +2000,18 @@ public class Attributes implements Serializable {
 
 
     public boolean addAll(Attributes other) {
-        return add(other, null, null, 0, 0, null, null, false, null);
+        return add(other, null, null, 0, 0, null, null,
+                false, false, null);
+    }
+
+    public boolean addAll(Attributes other, boolean mergeOriginalAttributesSequence) {
+        return add(other, null, null, 0, 0, null, null,
+                mergeOriginalAttributesSequence, false, null);
     }
 
     public boolean addSelected(Attributes other, Attributes selection) {
-        return add(other, selection.tags, null, 0, selection.size, selection, null, false, null);
+        return add(other, selection.tags, null, 0, selection.size, selection, null,
+                false, false, null);
     }
 
     public boolean addSelected(Attributes other, String privateCreator, int tag) {
@@ -2010,7 +2057,7 @@ public class Attributes implements Serializable {
      */
     public boolean addSelected(Attributes other, int[] selection,
             int fromIndex, int toIndex) {
-        return add(other, selection, null, fromIndex, toIndex, null, null, false, null);
+        return add(other, selection, null, fromIndex, toIndex, null, null, false, false, null);
     }
 
     /**
@@ -2039,11 +2086,12 @@ public class Attributes implements Serializable {
      */
     public boolean addNotSelected(Attributes other, int[] selection,
             int fromIndex, int toIndex) {
-        return add(other, null, selection, fromIndex, toIndex, null, null, false, null);
+        return add(other, null, selection, fromIndex, toIndex, null, null, false, false, null);
     }
 
     private boolean add(Attributes other, int[] include, int[] exclude, int fromIndex, int toIndex,
-                        Attributes selection, UpdatePolicy updatePolicy, boolean simulate, Attributes modified) {
+                        Attributes selection, UpdatePolicy updatePolicy, boolean mergeOriginalAttributesSequence,
+                        boolean simulate, Attributes modified) {
         if (updatePolicy == UpdatePolicy.REPLACE)
             throw new IllegalArgumentException("updatePolicy:" + updatePolicy);
 
@@ -2060,13 +2108,12 @@ public class Attributes implements Serializable {
         for (int i = 0; i < otherSize; i++) {
             int tag = tags[i];
             VR vr = srcVRs[i];
-            Object value = srcValues[i];
+            Object value = vr.isStringType() ? other.decodeStringValue(i) : srcValues[i];
             if (TagUtils.isPrivateCreator(tag)) {
                 if (contains(tag))
                     continue; // do not overwrite private creator IDs
 
                 if (vr == VR.LO) {
-                    value = other.decodeStringValue(i);
                     if ((value instanceof String)
                             && creatorTagOf((String) value, tag, false) != -1)
                         continue; // do not add duplicate private creator ID
@@ -2090,11 +2137,14 @@ public class Attributes implements Serializable {
                 if (updatePolicy != UpdatePolicy.OVERWRITE && isEmpty(value))
                     continue;
                 int j = indexOf(tag);
-                if (j >= 0) {
-                    if (updatePolicy != UpdatePolicy.SUPPLEMENT && equalValues(other, j, i))
+                if (j < 0) {
+                    if (updatePolicy == UpdatePolicy.PRESERVE)
+                        value = Value.NULL;
+                } else {
+                    if (updatePolicy == UpdatePolicy.PRESERVE)
                         continue;
                     Object origValue = vrs[j].isStringType() ? decodeStringValue(j) : values[j];
-                    if (updatePolicy == UpdatePolicy.SUPPLEMENT && !isEmpty(origValue))
+                    if (updatePolicy == UpdatePolicy.SUPPLEMENT ? !isEmpty(origValue) : equalValues(other, j, i))
                         continue;
                     if (modified != null && !isEmpty(origValue) && !modified.contains(privateCreator, tag)) {
                         if (origValue instanceof Sequence) {
@@ -2102,15 +2152,21 @@ public class Attributes implements Serializable {
                         } else if (origValue instanceof Fragments) {
                             modified.set(privateCreator, tag, (Fragments) origValue);
                         } else {
-                            modified.set(privateCreator, tag, vr,
-                                    toggleEndian(vr, origValue, modifiedToggleEndian));
+                            modified.set(privateCreator, tag, vrs[j],
+                                    toggleEndian(vrs[j], origValue, modifiedToggleEndian));
                         }
                     }
                 }
             }
             if (!simulate) {
                 if (value instanceof Sequence) {
-                    set(privateCreator, tag, (Sequence) value,
+                    Sequence dest;
+                    if (mergeOriginalAttributesSequence
+                            && tag == Tag.OriginalAttributesSequence
+                            && (dest = getSequence(tag)) != null)
+                        mergeOriginalAttributesSequence((Sequence) value, dest);
+                    else
+                        set(privateCreator, tag, (Sequence) value,
                             selection != null 
                                 ? selection.getNestedDataset(tag)
                                 : null);
@@ -2126,12 +2182,41 @@ public class Attributes implements Serializable {
         return numAdd != 0;
     }
 
+    private void mergeOriginalAttributesSequence(Sequence src, Sequence dest) {
+        Map<String,Attributes> sort = new TreeMap<>();
+        for (Attributes destItem : dest) {
+            sort.put(destItem.getString(Tag.AttributeModificationDateTime), destItem);
+        }
+        dest.clear();
+        for (Attributes srcItem : src) {
+            String dt = srcItem.getString(Tag.AttributeModificationDateTime);
+            Attributes destItem = sort.get(dt);
+            if (destItem != null) {
+                destItem.getNestedDataset(Tag.ModifiedAttributesSequence)
+                        .addAll(srcItem.getNestedDataset(Tag.ModifiedAttributesSequence));
+            } else {
+                sort.put(srcItem.getString(Tag.AttributeModificationDateTime), new Attributes(srcItem));
+            }
+        }
+        for (Attributes destItem : sort.values()) {
+            dest.add(destItem);
+        }
+    }
+
     public boolean update(UpdatePolicy updatePolicy, Attributes newAttrs, Attributes modified) {
-        return add(newAttrs, null, null, 0, 0, null, updatePolicy, false, modified);
+        return add(newAttrs, null, null, 0, 0, null, updatePolicy,
+                false, false, modified);
+    }
+
+    public boolean update(UpdatePolicy updatePolicy, boolean mergeOriginalAttributesSequence, Attributes newAttrs,
+                          Attributes modified) {
+        return add(newAttrs, null, null, 0, 0, null, updatePolicy,
+                mergeOriginalAttributesSequence, false, modified);
     }
 
     public boolean testUpdate(UpdatePolicy updatePolicy, Attributes newAttrs, Attributes modified) {
-        return add(newAttrs, null, null, 0, 0, null, updatePolicy, true, modified);
+        return add(newAttrs, null, null, 0, 0, null, updatePolicy,
+                false, true, modified);
     }
 
     /**
@@ -2151,7 +2236,7 @@ public class Attributes implements Serializable {
     public boolean updateSelected(UpdatePolicy updatePolicy, Attributes newAttrs,
                                   Attributes modified, int... selection) {
         return add(newAttrs, selection, null, 0, selection.length, null, updatePolicy,
-                false, modified);
+                false, false, modified);
     }
 
     /**
@@ -2168,7 +2253,73 @@ public class Attributes implements Serializable {
     public boolean testUpdateSelected(UpdatePolicy updatePolicy, Attributes newAttrs, Attributes modified,
                                       int... selection) {
         return add(newAttrs, selection, null, 0, selection.length, null,
-                updatePolicy, true, modified);
+                updatePolicy, false, true, modified);
+    }
+
+    /**
+     * Add not selected attributes from another Attributes object to this.
+     * Optionally, the original values of overwritten existing non-empty
+     * attributes are preserved in another Attributes object.
+     * The specified array of tag values must be sorted (as by the
+     * {@link java.util.Arrays#sort(int[])} method) prior to making this call.
+     *
+     * @param newAttrs the other Attributes object
+     * @param modified Attributes object to collect overwritten non-empty
+     *          attributes with original values or <tt>null</tt>
+     * @param selection sorted tag values
+     * @return <tt>true</tt> if one ore more attribute were added or
+     *          overwritten with a different value
+     */
+    public boolean updateNotSelected(UpdatePolicy updatePolicy, Attributes newAttrs,
+                                     Attributes modified, int... selection) {
+        return add(newAttrs, null, selection, 0, selection.length, null, updatePolicy,
+                false, false, modified);
+    }
+
+    /**
+     * Tests if {@link #updateNotSelected} would modify attributes, without actually
+     * modifying this attributes
+     *
+     * @param newAttrs the other Attributes object
+     * @param modified Attributes object to collect overwritten non-empty
+     *          attributes with original values or <tt>null</tt>
+     * @param selection sorted tag values
+     * @return <tt>true</tt> if one ore more attribute would be added or
+     *          overwritten with a different value
+     */
+    public boolean testUpdateNotSelected(UpdatePolicy updatePolicy, Attributes newAttrs, Attributes modified,
+                                      int... selection) {
+        return add(newAttrs, null, selection, 0, selection.length, null,
+                updatePolicy, false, true, modified);
+    }
+
+    /**
+     * Append item to already existing or new added (0400,0561) Original Attributes Sequence.
+     *
+     * @param sourceOfPreviousValues
+     * @param modificationDateTime
+     * @param reasonForModification
+     * @param modifyingSystem
+     * @param originalAttributes
+     * @return the same Attributes instance
+     */
+    public Attributes addOriginalAttributes(
+            String sourceOfPreviousValues,
+            Date modificationDateTime,
+            String reasonForModification,
+            String modifyingSystem,
+            Attributes originalAttributes) {
+        if (originalAttributes.isEmpty())
+            return this;
+
+        Attributes item = new Attributes(5);
+        item.ensureSequence(Tag.ModifiedAttributesSequence, 1).add(originalAttributes);
+        item.setDate(Tag.AttributeModificationDateTime, VR.DT, modificationDateTime);
+        item.setString(Tag.ModifyingSystem, VR.LO, modifyingSystem);
+        item.setString(Tag.SourceOfPreviousValues, VR.LO, sourceOfPreviousValues);
+        item.setString(Tag.ReasonForTheAttributeModification, VR.CS, reasonForModification);
+        ensureSequence(Tag.OriginalAttributesSequence, 1).add(item);
+        return this;
     }
 
     private static Object toggleEndian(VR vr, Object value, boolean toggleEndian) {
@@ -3098,6 +3249,10 @@ public class Attributes implements Serializable {
     }
 
     public int diff(Attributes other, int[] selection, Attributes diff) {
+        return diff(other, selection, diff, false);
+    }
+
+    public int diff(Attributes other, int[] selection, Attributes diff, boolean onlyModified) {
         int count = 0;
         for (int tag : selection) {
             int index = indexOf(tag);
@@ -3105,10 +3260,12 @@ public class Attributes implements Serializable {
             if (!equalValues(other, index, otherIndex)) {
                 if (diff != null) {
                     Object value = index < 0 ? Value.NULL : values[index];
-                    if (value instanceof Sequence) {
-                        diff.set(null, tag, (Sequence) value, null);
-                    } else {
-                        diff.set(tag, index < 0 ? other.vrs[otherIndex] : vrs[index], value);
+                    if (!onlyModified || value != Value.NULL) {
+                        if (value instanceof Sequence) {
+                            diff.set(null, tag, (Sequence) value, null);
+                        } else {
+                            diff.set(tag, index < 0 ? other.vrs[otherIndex] : vrs[index], value);
+                        }
                     }
                 }
                 count++;
@@ -3150,7 +3307,7 @@ public class Attributes implements Serializable {
         int removed = 0;
         for (int i = 0; i < size; i++) {
             Object value = values[i];
-            if (value instanceof BulkData) {
+            if (isBulkData(value)) {
                 int srcPos = i + 1;
                 int len = size - srcPos;
                 System.arraycopy(tags, srcPos, tags, i, len);
@@ -3166,6 +3323,12 @@ public class Attributes implements Serializable {
             }
         }
         return removed;
+    }
+
+    private static boolean isBulkData(Object value) {
+        return value instanceof BulkData || (value instanceof Fragments
+                && ((Fragments) value).size() > 1
+                && ((Fragments) value).get(1) instanceof BulkData);
     }
 
     private int creatorIndexOf(String privateCreator, int groupNumber) {
@@ -3233,7 +3396,7 @@ public class Attributes implements Serializable {
         int size1 = size;
         for (int i = 0; i < size1; i++) {
             int j = i;
-            while (TagUtils.isPrivateGroup(tags[j]) && j < size1)
+            while (j < size1 && TagUtils.isPrivateGroup(tags[j]))
                 j++;
             if (j > i) {
                 int len = size1 - j;

@@ -56,20 +56,19 @@ public class ValueSelectorTest {
 
     @Test
     public void testToString() {
-        ItemPointer ip = new ItemPointer(Tag.RequestAttributesSequence);
-        ValueSelector vs = new ValueSelector(Tag.StudyInstanceUID, null, null, 0, ip);
+        ItemPointer ip = new ItemPointer(Tag.RequestAttributesSequence, 0);
+        ValueSelector vs = new ValueSelector(Tag.StudyInstanceUID, null, 0, ip);
         assertEquals(XPATH, vs.toString());
     }
 
    @Test
     public void testValueOf() {
         ValueSelector vs = ValueSelector.valueOf(XPATH);
-        assertEquals(Tag.StudyInstanceUID, vs.tag);
-        assertNull(vs.privateCreator);
-        assertNull(vs.vr);
-        assertEquals(0, vs.valueIndex);
-        assertEquals(1, vs.itemPointers.length);
-        ItemPointer ip = vs.itemPointers[0];
+        assertEquals(Tag.StudyInstanceUID, vs.tag());
+        assertNull(vs.privateCreator());
+        assertEquals(0, vs.valueIndex());
+        assertEquals(1, vs.level());
+        ItemPointer ip = vs.itemPointer(0);
         assertEquals(Tag.RequestAttributesSequence, ip.sequenceTag);
         assertNull(ip.privateCreator);
         assertEquals(0, ip.itemIndex);

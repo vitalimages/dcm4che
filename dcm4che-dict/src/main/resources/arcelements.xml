@@ -42,6 +42,9 @@
 <elements>
   <el tag="7777xx10" keyword="PatientCreateDateTime" vr="DT" vm="1">Patient Create Date Time</el>
   <el tag="7777xx11" keyword="PatientUpdateDateTime" vr="DT" vm="1">Patient Update Date Time</el>
+  <el tag="7777xx12" keyword="PatientVerificationDateTime" vr="DT" vm="1">Patient Verification Date Time</el>
+  <el tag="7777xx13" keyword="PatientVerificationStatus" vr="CS" vm="1">Patient Verification Status</el>
+  <el tag="7777xx14" keyword="FailedVerificationsOfPatient" vr="US" vm="1">Failed Verifications of Patient</el>
   <el tag="7777xx20" keyword="StudyReceiveDateTime" vr="DT" vm="1">Study Receive Date Time</el>
   <el tag="7777xx21" keyword="StudyUpdateDateTime" vr="DT" vm="1">Study Update Date Time</el>
   <el tag="7777xx22" keyword="StudyAccessDateTime" vr="DT" vm="1">Study Access Date Time</el>
@@ -53,6 +56,8 @@
   <el tag="7777xx28" keyword="StorageIDsOfStudy" vr="LO" vm="1-n">Storage IDs of Study</el>
   <el tag="7777xx29" keyword="StudySizeInKB" vr="UL" vm="1">Study Size in KB</el>
   <el tag="7777xx2A" keyword="StudySizeBytes" vr="US" vm="1">Study Size Bytes</el>
+  <el tag="7777xx2B" keyword="StudyExpirationState" vr="CS" vm="1">Study Expiration State</el>
+  <el tag="7777xx2C" keyword="StudyExpirationExporterID" vr="LO" vm="1">Study Expiration Exporter ID</el>
   <el tag="7777xx30" keyword="SeriesReceiveDateTime" vr="DT" vm="1">Series Receive Date Time</el>
   <el tag="7777xx31" keyword="SeriesUpdateDateTime" vr="DT" vm="1">Series Update Date Time</el>
   <el tag="7777xx33" keyword="SeriesExpirationDate" vr="DA" vm="1">Series Expiration Date</el>
@@ -80,9 +85,13 @@
   <el tag="7777xx55" keyword="OtherStorageSequence" vr="LO" vm="1">Other Storage Sequence</el>
   <el tag="7777xx56" keyword="StorageObjectStatus" vr="CS" vm="1">Storage Object Status</el>
   <el tag="7777xx60" keyword="ScheduledStorageVerificationDateTimeOfSeries" vr="DT" vm="1">Scheduled Storage Verification Date Time of Series</el>
-  <el tag="7777xx61" keyword="FailuresOfLastStorageVerificationOfSeries" vr="US" vm="1">Failures of Last Storage Verification of Series</el>
+  <el tag="7777xx61" keyword="FailuresOfLastStorageVerificationOfSeries" vr="US" vm="1">Failures of last Storage Verification of Series</el>
   <el tag="7777xx62" keyword="ScheduledCompressionDateTimeOfSeries" vr="DT" vm="1">Scheduled Compression Date Time of Series</el>
-  <el tag="7777xx63" keyword="FailuresOfLastCompressionOfSeries" vr="US" vm="1">Failures of Last Compression of Series</el>
+  <el tag="7777xx63" keyword="FailuresOfLastCompressionOfSeries" vr="US" vm="1">Failures of last Compression of Series</el>
+  <el tag="7777xx64" keyword="SeriesExpirationState" vr="CS" vm="1">Series Expiration State</el>
+  <el tag="7777xx65" keyword="SeriesExpirationExporterID" vr="LO" vm="1">Series Expiration Exporter ID</el>
+  <el tag="7777xx66" keyword="SeriesMetadataCreationDateTime" vr="DT" vm="1">Series Metadata Creation Date Time</el>
+  <el tag="7777xx67" keyword="SeriesMetadataUpdateFailures" vr="US" vm="1">Series Metadata Update Failures</el>
   <el tag="7777xxE0" keyword="XRoadPersonStatus" vr="CS" vm="1">X-Road Person Status</el>
   <el tag="7777xxE1" keyword="XRoadDataStatus" vr="CS" vm="1">X-Road Data Status</el>
 </elements>

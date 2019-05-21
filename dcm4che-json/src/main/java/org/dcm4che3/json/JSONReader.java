@@ -42,6 +42,8 @@ import org.dcm4che3.data.*;
 import org.dcm4che3.data.PersonName.Group;
 import org.dcm4che3.util.Base64;
 import org.dcm4che3.util.TagUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParser.Event;
@@ -57,6 +59,8 @@ import java.util.List;
  *
  */
 public class JSONReader {
+
+    private static final Logger LOG = LoggerFactory.getLogger(JSONReader.class);
 
     public interface Callback {
 
@@ -191,7 +195,10 @@ public class JSONReader {
 
         if (el.isEmpty())
             attrs.setNull(tag, el.vr);
-        else switch (el.vr) {
+        else if (el.bulkDataURI != null) {
+            if (!skipBulkDataURI)
+                attrs.setValue(tag, el.vr, new BulkData(null, el.bulkDataURI, false));
+        } else switch (el.vr) {
             case AE:
             case AS:
             case AT:
@@ -233,10 +240,7 @@ public class JSONReader {
             case UN:
                 if (el.bytes != null)
                     attrs.setBytes(tag, el.vr, el.bytes);
-                else if (el.bulkDataURI != null) {
-                    if (!skipBulkDataURI)
-                        attrs.setValue(tag, el.vr, new BulkData(null, el.bulkDataURI, false));
-                } else
+                else
                     el.toFragments(attrs.newFragments(tag, el.vr, el.values.size()));
         }
     }
@@ -341,10 +345,9 @@ public class JSONReader {
     }
 
     private Object readDataFragment() {
-        next();
         byte[] bytes = null;
         String bulkDataURI = null;
-        while (next() != Event.KEY_NAME) {
+        while (next() == Event.KEY_NAME) {
             switch (getString()) {
                 case "BulkDataURI":
                     bulkDataURI = valueString();
@@ -389,8 +392,18 @@ public class JSONReader {
                 Object value = values.get(i);
                 if (value instanceof String) {
                     ds[i] = Double.parseDouble((String) value);
+                } else if (number == null) {
+                    LOG.info("decode {} null as NaN", vr);
+                    ds[i] = Double.NaN;
                 } else {
-                    ds[i] = ((Number) value).doubleValue();
+                    ds[i] = number.doubleValue();
+                    if (ds[i] == -Double.MAX_VALUE) {
+                        LOG.info("decode {} {} as -Infinity", vr, ds[i]);
+                        ds[i] = Double.NEGATIVE_INFINITY;
+                    } else if (ds[i] == Double.MAX_VALUE) {
+                        LOG.info("decode {} {} as Infinity", vr, ds[i]);
+                        ds[i] = Double.POSITIVE_INFINITY;
+                    }
                 }
             }
             return ds;

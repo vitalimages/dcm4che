@@ -3,8 +3,7 @@
   <parent>
     <artifactId>dcm4che-tool</artifactId>
     <groupId>org.dcm4che.tool</groupId>
-    <version>5.14.1.2-SNAPSHOT</version>
-    <relativePath>..</relativePath>
+    <version>5.17.0</version>
   </parent>
   <artifactId>dcm4che-tool-jpg2dcm</artifactId>
   <name>dcm4che-tool-jpg2dcm</name>
@@ -16,18 +15,22 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.dcm4che</groupId>
+      <artifactId>dcm4che-imageio</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <groupId>org.dcm4che.tool</groupId>
       <artifactId>dcm4che-tool-common</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-log4j12</artifactId>
+      <groupId>com.sun.activation</groupId>
+      <artifactId>jakarta.activation</artifactId>
     </dependency>
     <dependency>
-        <groupId>org.dcm4che</groupId>
-        <artifactId>dcm4che-imageio</artifactId>
-        <version>${project.version}</version>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-log4j12</artifactId>
     </dependency>
   </dependencies>
 </project>

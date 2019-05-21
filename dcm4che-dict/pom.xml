@@ -41,7 +41,7 @@
   <parent>
     <artifactId>dcm4che-parent</artifactId>
     <groupId>org.dcm4che</groupId>
-    <version>5.14.1.2-SNAPSHOT</version>
+    <version>5.17.0</version>
     <relativePath>..</relativePath>
   </parent>
   <artifactId>dcm4che-dict</artifactId>
@@ -59,7 +59,6 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>xml-maven-plugin</artifactId>
-        <version>1.0</version>
         <executions>
           <execution>
             <goals>

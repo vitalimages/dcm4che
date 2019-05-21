@@ -275,6 +275,8 @@ public class AuditMessages {
                 new EventTypeCode("RESCHEDULE", "99DCM4CHEE", "Reschedule Task");
         public static final EventTypeCode DeleteTask =
                 new EventTypeCode("DELETE", "99DCM4CHEE", "Delete Task");
+        public static final EventTypeCode AssociationFailure =
+                new EventTypeCode("ASSOCIATION-FAILURE", "99DCM4CHEE", "Association Failure");
         public static final EventTypeCode x0110 =
                 new EventTypeCode("0110", "99DCM4CHEE", "Processing Failure");
         public static final EventTypeCode x0118 =
@@ -309,6 +311,8 @@ public class AuditMessages {
                 new EventTypeCode("A777", "99DCM4CHEE", "Patient ID missing in object");
         public static final EventTypeCode A778 =
                 new EventTypeCode("A778", "99DCM4CHEE", "Conflicting Patient ID not accepted");
+        public static final EventTypeCode A779 =
+                new EventTypeCode("A779", "99DCM4CHEE", "Conflicting Patient Attributes rejected");
         public static final EventTypeCode C409 =
                 new EventTypeCode("C409", "99DCM4CHEE", "Different Study Instance UID");
 

@@ -7,11 +7,18 @@
   ],
   "properties": {
     "dcmLimitOpenAssociations": {
-      "title": "Limit Open Associations",
-      "description": "Limit open DICOM connections; rejects Association requests if the limit is exceeded. 0 = unlimited.",
+      "title": "Association Limit",
+      "description": "Maximal number of open DICOM connections; rejects Association requests if the limit is exceeded; 0 = unlimited.",
       "type": "integer",
       "minimum": 0,
       "default": 0
+    },
+    "dcmLimitAssociationsInitiatedBy": {
+      "title": "Association Limit for AE",
+      "description": "Maximal number of open DICOM connections initiated by a particular Application Entity (AE) in format <ae-title>=<number>; rejects Association requests from that AE if the limit is exceeded.",
+      "type": "array",
+      "items" : { "type": "string" },
+      "format": "dcmLimitAssociationsInitiatedBy"
     },
     "dcmTrustStoreURL": {
       "title": "Trust Store URL",
@@ -76,9 +83,19 @@
       "description": "Web Applications provided by the Device",
       "type": "array",
       "titleKey":"{dcmWebAppName}",
-      "order":27,
+      "order":26,
       "items": {
         "$ref": "webApplication.schema.json"
+      }
+    },
+    "dcmKeycloakClient": {
+      "title": "Keycloak Clients",
+      "description": "Keycloak Clients provided by the Device",
+      "type": "array",
+      "titleKey":"{dcmKeycloakClientID}",
+      "order":27,
+      "items": {
+        "$ref": "keycloakClient.schema.json"
       }
     },
     "hl7Application": {

@@ -66,20 +66,22 @@ import org.slf4j.LoggerFactory;
 public class WadoRS {
     private static final Logger LOG = LoggerFactory.getLogger(WadoRS.class);
     private static final ResourceBundle rb = ResourceBundle.getBundle("org.dcm4che3.tool.wadors.messages");
-    private String url;
-    private Input input;
+    private static final String wildcard = "wildcard";
+    private Input input = Input.METADATA_JSON;
     private String user;
-    private String accept;
-    private static File outDir;
-    private static int count;
+    private Accept accept;
+    private boolean header;
+    private static Path outDir;
 
     public WadoRS() {}
 
     public static void main(String[] args) {
         try {
             WadoRS wadoRS = new WadoRS();
-            init(parseComandLine(args), wadoRS);
-            wadoRS.wado();
+            CommandLine cl = parseComandLine(args);
+            init(cl, wadoRS);
+            for (String url : cl.getArgList())
+                wadoRS.wado(url);
         } catch (ParseException e) {
             System.err.println("wadors: " + e.getMessage());
             System.err.println(rb.getString("try"));
@@ -91,24 +93,23 @@ public class WadoRS {
         }
     }
 
-    public final void setOutputDirectory(File dir) {
-        dir.mkdirs();
-        outDir = dir;
+    private void setOutputDirectory(String dir) throws IOException {
+        outDir = Files.createDirectories(Paths.get(dir));
     }
 
-    public final void setUser(String user) {
+    private void setUser(String user) {
         this.user = user;
     }
 
-    public final void setURL(String url) {
-        this.url = url;
+    private void setAcceptType(String accept) {
+        this.accept = Accept.valueOf(accept);
     }
 
-    public final void setAcceptType(String accept) {
-        this.accept = accept;
+    private void setHeader(boolean val) {
+        this.header = val;
     }
 
-    public final void setInput(Input input) {
+    private void setInput(Input input) {
         this.input = input;
     }
 
@@ -117,20 +118,19 @@ public class WadoRS {
         CLIUtils.addCommonOptions(opts);
         opts.addOption(Option.builder("a")
                 .longOpt("accept")
-                .hasArg(true)
+                .hasArg()
                 .desc(rb.getString("accept"))
+                .build());
+        opts.addOption(Option.builder()
+                .longOpt("header")
+                .hasArg(false)
+                .desc(rb.getString("header"))
                 .build());
         opts.addOption(Option.builder()
                 .longOpt("out-dir")
                 .hasArg()
                 .argName("directory")
                 .desc(rb.getString("out-dir"))
-                .build());
-        opts.addOption(Option.builder()
-                .hasArg()
-                .argName("url")
-                .longOpt("url")
-                .desc(rb.getString("url"))
                 .build());
         opts.addOption(Option.builder("u")
                 .hasArg()
@@ -142,22 +142,26 @@ public class WadoRS {
     }
 
     private static void init(CommandLine cl, WadoRS wadoRS) throws Exception {
-        wadoRS.setURL(cl.getOptionValue("url"));
-        if (wadoRS.url == null)
-            throw new MissingOptionException("Missing url.");
+        if (cl.getArgList().isEmpty())
+            throw new MissingArgumentException("Specify at least one url as an argument");
+        wadoRS.setAcceptType(cl.hasOption("a") ? cl.getOptionValue("a") : wildcard);
         wadoRS.setUser(cl.getOptionValue("u"));
-        wadoRS.setAcceptType(cl.getOptionValue("a"));
         if (cl.hasOption("out-dir"))
-            wadoRS.setOutputDirectory(new File(cl.getOptionValue("out-dir")));
+            wadoRS.setOutputDirectory(cl.getOptionValue("out-dir"));
+        wadoRS.setHeader(cl.hasOption("header"));
     }
 
-    private void wado() throws Exception {
+    private void wado(String url) throws Exception {
+        final String uid = uidFrom(url);
+        if (!header)
+            url = appendAcceptToURL(url);
         URL newUrl = new URL(url);
         final HttpURLConnection connection = (HttpURLConnection) newUrl.openConnection();
         connection.setDoOutput(true);
         connection.setDoInput(true);
         connection.setRequestMethod("GET");
-        connection.setRequestProperty("Accept", accept);
+        if (header)
+            connection.setRequestProperty("Accept", accept.headerVal);
         logOutgoing(connection);
         if (user != null) {
             String basicAuth = basicAuth(user);
@@ -165,16 +169,53 @@ public class WadoRS {
             connection.setRequestProperty("Authorization", basicAuth);
         }
         logIncoming(connection);
-        unpack(connection);
+        unpack(connection, uid);
         connection.disconnect();
     }
 
-    private static void logOutgoing(HttpURLConnection connection) {
-        LOG.info("> " + connection.getRequestMethod() + " " + connection.getURL());
-        LOG.info("> Accept: " + connection.getRequestProperty("Accept"));
+    private String appendAcceptToURL(String url) {
+        return url
+                + (url.indexOf('?') != -1 ? "&" : "?")
+                + "accept="
+                + accept.headerVal.replace("+", "%2B");
     }
 
-    private static void logIncoming(HttpURLConnection connection) throws Exception {
+    private String uidFrom(String url) {
+        return url.contains("metadata")
+                ? url.substring(url.substring(0, url.lastIndexOf('/')).lastIndexOf('/') + 1, url.lastIndexOf('/'))
+                : url.contains("?")
+                    ? url.substring(url.substring(0, url.indexOf('?')).lastIndexOf('/') + 1, url.indexOf('?'))
+                    : url.substring(url.lastIndexOf('/')+1);
+    }
+
+    enum Accept {
+        wildcard("*"),
+        dicom("multipart/related;type=application/dicom"),
+        octetstream("multipart/related;type=application/octet-stream"),
+        pdf("multipart/related;type=application/pdf"),
+        jpeg("multipart/related;type=image/jpeg"),
+        jp2("multipart/related;type=image/jp2"),
+        jpx("multipart/related;type=image/jpx"),
+        xdicomrle("multipart/related;type=image/x-dicom+rle"),
+        xjls("multipart/related;type=image/x-jls"),
+        mpeg("multipart/related;type=video/mpeg"),
+        mp4("multipart/related;type=video/mp4"),
+        xml("multipart/related;type=application/dicom+xml"),
+        json("application/dicom+json");
+
+        String headerVal;
+
+        Accept(String headerVal) {
+            this.headerVal = headerVal;
+        }
+    }
+
+    private void logOutgoing(HttpURLConnection connection) {
+        LOG.info("> " + connection.getRequestMethod() + " " + connection.getURL());
+        LOG.info("> Accept: " + accept.headerVal);
+    }
+
+    private void logIncoming(HttpURLConnection connection) throws Exception {
         LOG.info("< Content-Length: " + connection.getContentLength());
         LOG.info("< HTTP/1.1 Response: " + String.valueOf(connection.getResponseCode()) + " " + connection.getResponseMessage());
         LOG.info("< Transfer-Encoding: " + connection.getContentEncoding());
@@ -184,25 +225,25 @@ public class WadoRS {
         LOG.info("< Date: " + connection.getHeaderField("Date"));
     }
 
-    private void unpack(HttpURLConnection connection) throws Exception {
-        String boundary = boundary(connection);
-        if (boundary == null) {
-            LOG.warn("Missing Boundary Parameter in response Content Type");
-            return;
-        }
-
+    private void unpack(HttpURLConnection connection, final String uid) throws Exception {
         try (InputStream is = connection.getInputStream()) {
-            if (input == Input.METADATA_JSON) {
-                input.writeBodyPart(is);
+            if (connection.getContentType().endsWith("json")) {
+                LOG.info("Extract metadata as json");
+                input.writeBodyPart(is, 1, uid);
+                return;
+            }
+            String boundary = boundary(connection);
+            if (boundary == null) {
+                LOG.warn("Invalid response. Unpacking of parts not possible.");
                 return;
             }
             new MultipartParser(boundary).parse(new BufferedInputStream(is), new MultipartParser.Handler() {
                 @Override
                 public void bodyPart(int partNumber, MultipartInputStream multipartInputStream) throws IOException {
                     Map<String, List<String>> headerParams = multipartInputStream.readHeaderParams();
-                    LOG.info("Extract Part #{}{}" + partNumber + headerParams);
+                    LOG.info("Extract Part #{}{}", partNumber, headerParams);
                     try {
-                        if (!input.writeBodyPart(multipartInputStream)) {
+                        if (!input.writeBodyPart(multipartInputStream, partNumber, uid)) {
                             LOG.info("{}: Ignore Part with Content-Type={}"
                                     + getHeaderParamValue(headerParams, "content-type"));
                             multipartInputStream.skipAll();
@@ -223,18 +264,15 @@ public class WadoRS {
     private String boundary(HttpURLConnection connection) {
         String contentType = connection.getContentType();
         String[] strings = contentType.split(";");
-        String mainType = "";
         String type = "";
         String boundary = null;
         for (String s : strings) {
-            if (!s.contains("="))
-                mainType = s;
             if (s.contains("boundary"))
-                boundary = s.substring(s.indexOf("=")+1);
+                boundary = s.substring(s.indexOf("=")+1).replaceAll("\"", "");
             if (s.contains("type"))
                 type = s.substring(s.indexOf("=")+1).replaceAll("\"", "");
         }
-        setInput(mainType.endsWith("json") ? Input.METADATA_JSON : toInput(type));
+        setInput(toInput(type));
         return boundary;
     }
 
@@ -262,65 +300,65 @@ public class WadoRS {
     private enum Input {
         DICOM {
             @Override
-            boolean writeBodyPart(InputStream in) throws IOException {
-                write(in, "dcm");
+            boolean writeBodyPart(InputStream in, int partNumber, String uid) throws IOException {
+                write(in, partNumber, uid, "dicom");
                 return true;
             }
         },
         IMAGE {
             @Override
-            boolean writeBodyPart(InputStream in) throws IOException {
-                write(in, "jpeg");
+            boolean writeBodyPart(InputStream in, int partNumber, String uid) throws IOException {
+                write(in, partNumber, uid, "jpeg");
                 return true;
             }
         },
         VIDEO {
             @Override
-            boolean writeBodyPart(InputStream in) throws IOException {
-                write(in, "mpeg");
+            boolean writeBodyPart(InputStream in, int partNumber, String uid) throws IOException {
+                write(in, partNumber, uid, "mpeg");
                 return true;
             }
         },
         PDF {
             @Override
-            boolean writeBodyPart(InputStream in) throws IOException {
-                write(in, "pdf");
+            boolean writeBodyPart(InputStream in, int partNumber, String uid) throws IOException {
+                write(in, partNumber, uid, "pdf");
                 return true;
             }
         },
         OCTET_STREAM {
             @Override
-            boolean writeBodyPart(InputStream in) throws IOException {
-                write(in, "native");
+            boolean writeBodyPart(InputStream in, int partNumber, String uid) throws IOException {
+                write(in, partNumber, uid, "native");
                 return true;
             }
         },
         METADATA_XML {
             @Override
-            boolean writeBodyPart(InputStream in) throws IOException {
-                write(in, "xml");
+            boolean writeBodyPart(InputStream in, int partNumber, String uid) throws IOException {
+                write(in, partNumber, uid, "xml");
                 return true;
             }
         },
         METADATA_JSON {
             @Override
-            boolean writeBodyPart(InputStream in) throws IOException {
-                write(in, "json");
+            boolean writeBodyPart(InputStream in, int partNumber, String uid) throws IOException {
+                write(in, partNumber, uid, "json");
                 return false;
             }
         };
 
-        abstract boolean writeBodyPart(InputStream in) throws IOException;
+        abstract boolean writeBodyPart(InputStream in, int partNumber, String uid) throws IOException;
     }
 
-    private static void write(InputStream in, String ext) throws IOException {
+    private static void write(InputStream in, int partNumber, String uid, String ext) throws IOException {
+        String file = uid + "-" + String.format("%03d", partNumber) + "." + ext;
         Path path = outDir != null
-                ? new File(outDir.toPath().toString(), "part" + count + "." + ext).toPath()
-                : Paths.get("part" + count + "." + ext);
+                ? outDir.resolve(file)
+                : Paths.get(file);
         try (OutputStream out = Files.newOutputStream(path)) {
             StreamUtils.copy(in, out);
         }
-        count++;
     }
 
 }

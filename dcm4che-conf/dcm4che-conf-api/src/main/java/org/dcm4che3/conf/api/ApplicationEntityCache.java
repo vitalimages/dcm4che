@@ -56,6 +56,7 @@ public class ApplicationEntityCache
         return conf.findApplicationEntity(key);
     }
 
+    @Override
     public ApplicationEntity findApplicationEntity(String aet)
             throws ConfigurationException {
         ApplicationEntity ae = get(aet);
